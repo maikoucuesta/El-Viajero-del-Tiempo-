@@ -1,0 +1,40 @@
+name: Compilar APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        working-directory: el-viajero-apk-proyecto
+        run: npm ci
+
+      - name: Dar permisos a gradlew
+        run: chmod +x el-viajero-apk-proyecto/android/gradlew
+
+      - name: Compilar APK de debug
+        working-directory: el-viajero-apk-proyecto/android
+        run: ./gradlew assembleDebug
+
+      - name: Subir APK como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: el-viajero-del-tiempo-apk
+          path: el-viajero-apk-proyecto/android/app/build/outputs/apk/debug/app-debug.apk
