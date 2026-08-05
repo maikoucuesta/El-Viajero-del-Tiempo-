@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Viajero Del Tiempo</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0906">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="El Viajero">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0b0906;
+    --bg-2: #141009;
+    --bg-3: #1b1509;
+    --gold: #b8933f;
+    --gold-soft: #e0c47c;
+    --parchment: #ece2c8;
+    --line: #3a2f1c;
+    --dim: #8a7a55;
+    --danger: #a35a3f;
+    --ok: #7f9a6a;
+  }
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    background: radial-gradient(ellipse at 20% 0%, #171008 0%, var(--bg) 55%);
+    color: var(--parchment);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection{ background: var(--gold); color: #100c06; }
+
+  /* ---------- VEIL / INTRO ---------- */
+  #veil{
+    position: fixed; inset: 0; z-index: 50; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background: radial-gradient(ellipse at 50% 40%, #191207 0%, #0b0906 70%);
+    text-align:center; padding: 24px;
+    transition: opacity 1.1s ease, visibility 1.1s ease;
+  }
+  #veil.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+
+  #veil-stars{ position:absolute; inset:0; pointer-events:none; z-index:0; }
+  .star{ position:absolute; background:#f4e9cf; border-radius:50%; }
+  @keyframes starTwinkle{ 0%,100%{ opacity:.12; } 50%{ opacity:.75; } }
+
+  #veil-loader{
+    position:relative; z-index:1; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+  }
+  .loader-dot{
+    width:10px; height:10px; border-radius:50%; background: var(--gold-soft);
+    box-shadow: 0 0 16px rgba(224,196,124,.8); margin-bottom:20px;
+    animation: loaderPulse 1.1s ease-in-out infinite;
+  }
+  @keyframes loaderPulse{ 0%,100%{ transform: scale(1); opacity:.55; } 50%{ transform: scale(1.7); opacity:1; } }
+  .loader-text{ font-size:11px; letter-spacing:.26em; text-transform:uppercase; color: var(--dim); }
+
+  #veil-content{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; }
+  .veil-fade{ opacity:0; transform: translateY(12px); }
+  #veil-content.active .veil-fade{ animation: veilFadeIn .8s ease forwards; animation-delay: var(--d, 0s); }
+  @keyframes veilFadeIn{ to{ opacity:1; transform:translateY(0); } }
+
+  .compass{ width: 168px; height:168px; margin-bottom: 34px; }
+  .compass.glow{ animation: compassGlow 3.4s ease-in-out infinite; }
+  @keyframes compassGlow{
+    0%,100%{ filter: drop-shadow(0 0 5px rgba(224,196,124,.2)); }
+    50%{ filter: drop-shadow(0 0 20px rgba(224,196,124,.55)); }
+  }
+  .compass-ring{ animation: spin 90s linear infinite; transform-origin: 100px 100px; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  .compass-hand{
+    transform-origin: 100px 100px;
+    animation: spin 14s linear infinite;
+  }
+
+  .eyebrow{
+    font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase;
+    color: var(--dim); font-weight:500; margin-bottom: 18px;
+  }
+  #veil h1{
+    font-weight: 200; font-size: clamp(30px, 6vw, 58px);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--parchment);
+    line-height: 1.15;
+  }
+  #veil h1 span{ color: var(--gold-soft); font-weight: 300; }
+  .veil-rule{ width:56px; height:1px; background: var(--gold); opacity:.5; margin: 26px auto; }
+  #veil p.sub{
+    max-width: 440px; color: var(--dim); font-size: 15px; line-height:1.7;
+    font-weight: 300; margin-bottom: 40px;
+  }
+
+  /* ---------- VEIL: código de acceso local ---------- */
+  .lock-hint{ max-width:380px; color:#6e6142; font-size:11.5px; line-height:1.6; font-weight:300; margin: 0 auto 16px; }
+  .lock-row{ display:flex; gap:10px; justify-content:center; }
+  .lock-row input{ max-width:180px; text-align:center; }
+  .lock-error{ color: var(--danger); font-size:12px; margin-top:12px; min-height:16px; }
+  .lock-setup-link{
+    display:inline-block; margin-top:22px; font-size:11px; color:#5c5138;
+    letter-spacing:.04em; cursor:pointer; text-decoration:underline;
+  }
+  .lock-setup-link:hover{ color: var(--dim); }
+  .lock-setup-form{ margin-top:18px; }
+  .lock-manage{ font-size:11px; }
+
+  .btn{
+    font-family: inherit; cursor:pointer; border: 1px solid var(--gold);
+    background: transparent; color: var(--gold-soft);
+    padding: 14px 30px; font-size: 12px; letter-spacing: 0.18em;
+    text-transform: uppercase; font-weight: 500; border-radius: 8px;
+    transition: background .25s ease, color .25s ease, box-shadow .25s ease;
+  }
+  .btn:hover{ background: var(--gold); color:#141009; box-shadow: 0 0 24px rgba(184,147,63,.35); }
+  .btn.ghost{ border-color: var(--line); color: var(--dim); }
+  .btn.ghost:hover{ background: var(--bg-3); color: var(--parchment); box-shadow:none; }
+  .btn.small{ padding: 9px 16px; font-size: 10.5px; }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn:disabled:hover{ background:transparent; color: var(--gold-soft); box-shadow:none; }
+
+  /* ---------- APP SHELL ---------- */
+  #app{ display:flex; height:100vh; width:100vw; }
+
+  #sidebar{
+    width: 240px; flex-shrink:0; background: var(--bg-2);
+    border-right: 1px solid var(--line);
+    display:flex; flex-direction:column; padding: 28px 20px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; margin-bottom: 46px; padding: 0 4px; }
+  .brand svg{ width:22px; height:22px; flex-shrink:0; }
+  .brand-text{ font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); font-weight:600; line-height:1.4; }
+  .brand-text b{ color: var(--gold-soft); font-weight:600; display:block; }
+
+  nav{ display:flex; flex-direction:column; gap: 4px; }
+  .nav-item{
+    display:flex; align-items:center; gap: 12px;
+    padding: 12px 14px; border-radius: 8px; cursor:pointer;
+    color: var(--dim); font-size: 13.5px; letter-spacing:0.01em;
+    border-left: 2px solid transparent;
+    transition: background .2s ease, color .2s ease;
+  }
+  .nav-item svg{ width:15px; height:15px; opacity:.8; flex-shrink:0; }
+  .nav-item:hover{ color: var(--parchment); background: rgba(184,147,63,0.06); }
+  .nav-item.active{ color: var(--gold-soft); background: rgba(184,147,63,0.1); border-left-color: var(--gold); }
+
+  .sidebar-foot{ margin-top:auto; padding-top: 24px; border-top: 1px solid var(--line); }
+  .sidebar-foot p{ font-size: 11.5px; color: var(--dim); line-height:1.6; font-weight:300; font-style: italic; }
+  .sidebar-count{ font-size: 10px; letter-spacing:.14em; text-transform:uppercase; color:#5c5138; margin-top:10px; }
+  .report-bug-link{
+    display:inline-block; margin-top:14px; font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    color:#5c5138; text-decoration:none; border:1px solid var(--line); border-radius:8px; padding:6px 10px;
+    transition: color .2s ease, border-color .2s ease;
+  }
+  .report-bug-link:hover{ color: var(--gold-soft); border-color: var(--gold); }
+
+  main{ flex:1; overflow-y:auto; padding: 64px 56px; }
+  .panel{ display:none; max-width: 620px; margin: 0 auto; animation: fadeUp .5s ease; }
+  .panel.active{ display:block; }
+  .panel.wide{ max-width: 720px; }
+  @keyframes fadeUp{ from{ opacity:0; transform: translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  h2.title{ font-weight:200; font-size: 30px; letter-spacing:0.01em; color: var(--parchment); margin-bottom: 8px; }
+  p.lede{ color: var(--dim); font-size: 14px; font-weight:300; line-height:1.7; margin-bottom: 40px; max-width: 480px; }
+
+  /* ---------- CONSULT FORM ---------- */
+  .field label{ display:block; font-size: 11px; letter-spacing:.14em; text-transform:uppercase; color: var(--dim); margin-bottom: 10px; }
+  .field input, .field textarea, .field select,
+  input[type="text"], input[type="number"], input[type="time"], input[type="date"], textarea, select{
+    color-scheme: dark;
+    width:100%; background: var(--bg-2); border: 1px solid var(--line);
+    color: var(--parchment); font-family: inherit; font-size: 15px; font-weight:300;
+    padding: 15px 16px; border-radius:8px; outline:none;
+    transition: border-color .2s ease;
+  }
+  .field textarea{ resize:vertical; min-height:84px; line-height:1.6; }
+  .field input::placeholder, .field textarea::placeholder{ color:#5c5138; }
+  .field input:focus, .field textarea:focus, .field select:focus{ border-color: var(--gold); }
+  .field{ margin-bottom: 26px; }
+  .field.small-gap{ margin-bottom: 14px; }
+  .field-hint{ font-size:11px; color:#5c5138; margin-top:8px; font-weight:300; }
+  .form-row{ display:flex; gap:14px; }
+
+  /* ---------- MODE TOGGLE ---------- */
+  .mode-toggle{ display:flex; gap:8px; margin-bottom: 36px; }
+  .mode-pill{
+    flex:1; text-align:center; padding: 13px 10px; border:1px solid var(--line);
+    border-radius: 8px; cursor:pointer; font-size:11.5px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--dim); font-weight:500;
+    transition: background .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .mode-pill:hover{ color: var(--parchment); border-color:#5c5138; }
+  .mode-pill.active{ color: var(--gold-soft); border-color: var(--gold); background: rgba(184,147,63,.08); }
+
+  /* ---------- DAY CHIPS ---------- */
+  .day-chips{ display:flex; gap:8px; flex-wrap:wrap; }
+  .day-chip{
+    width:44px; height:44px; display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--line); border-radius: 8px; cursor:pointer;
+    font-size:12px; color:var(--dim); font-weight:500;
+    transition: background .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .day-chip:hover{ color:var(--parchment); border-color:#5c5138; }
+  .day-chip.active{ color:#141009; background: var(--gold); border-color: var(--gold); }
+
+  /* ---------- LOADING ---------- */
+  #loading, #loading-obj{ display:none; align-items:center; gap:18px; padding: 30px 0; color: var(--dim); font-size:13px; font-weight:300; font-style: italic; }
+  #loading.active, #loading-obj.active{ display:flex; }
+  .mini-compass{ width:40px; height:40px; flex-shrink:0; }
+  .mini-compass .compass-ring{ animation-duration: 2.2s; }
+  .mini-compass .compass-hand{ animation-duration: .9s; }
+
+  /* ---------- RESULT ---------- */
+  #result, #result-obj{ display:none; }
+  #result.active, #result-obj.active{ display:block; animation: fadeUp .6s ease; }
+  .reading-card{
+    background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 34px; display:flex; gap: 30px; align-items:center; margin-bottom: 26px;
+  }
+  .reading-dial{ width: 96px; height:96px; flex-shrink:0; }
+  .reading-dial .compass-hand{ animation: none; }
+  .reading-text .eyebrow{ margin-bottom: 10px; }
+  .vision-quote{ font-size: 15.5px; line-height:1.75; font-weight:300; color: var(--parchment); }
+  .vision-quote b{ color: var(--gold-soft); font-weight:500; }
+
+  .time-strip{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+    padding: 20px 4px; margin-bottom: 28px;
+  }
+  .time-strip .big{ font-size: 34px; font-weight:200; color: var(--gold-soft); letter-spacing:.02em; }
+  .time-strip .lbl{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+  .time-strip .countdown{ text-align:right; }
+  .time-strip .countdown .big{ color: var(--parchment); font-variant-numeric: tabular-nums; }
+
+  .verdict{
+    padding: 18px 20px; border-left:2px solid var(--gold); background: rgba(184,147,63,.06);
+    font-size:14px; font-weight:300; line-height:1.7; margin-bottom: 26px; display:none;
+  }
+  .verdict.active{ display:block; }
+  .verdict .stat{ color: var(--dim); font-size:12px; margin-top:10px; letter-spacing:.02em; }
+
+  .result-actions{ display:flex; gap: 14px; }
+
+  /* ---------- OBJECTIVE PLAN ---------- */
+  .plan-summary{ font-size:12px; color:var(--dim); margin-bottom:22px; letter-spacing:.02em; }
+  .plan-list{ display:flex; flex-direction:column; gap:10px; margin-bottom: 30px; }
+  .session-card{
+    background: var(--bg-2); border:1px solid var(--line); border-radius:8px;
+    padding: 16px 18px; display:flex; gap:16px; align-items:flex-start;
+  }
+  .session-date{
+    flex-shrink:0; width:76px; font-size:11.5px; color:var(--gold-soft);
+    letter-spacing:.03em; font-weight:500; line-height:1.4; text-transform:capitalize;
+  }
+  .session-label{ font-size:13.5px; color:var(--parchment); font-weight:300; line-height:1.6; }
+  .session-mins{ font-size:10.5px; color:var(--dim); margin-top:5px; letter-spacing:.05em; text-transform:uppercase; }
+
+  /* ---------- PROFILE ---------- */
+  .example-row{ display:flex; gap:10px; margin-bottom:10px; align-items:center; }
+  .example-row input[type="text"]{ flex:1; }
+  .example-row input[type="number"]{ width:96px; text-align:right; }
+  .simple-row{ display:flex; gap:10px; margin-bottom:10px; align-items:center; }
+  .simple-row input[type="text"]{ flex:1; }
+  .example-remove{
+    flex-shrink:0; width:38px; height:52px; display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--line); border-radius:8px; color:var(--dim); cursor:pointer; font-size:16px;
+    transition: color .2s ease, border-color .2s ease;
+  }
+  .example-remove:hover{ color: var(--danger); border-color: var(--danger); }
+  .add-row-link{
+    display:inline-block; margin-top:4px; margin-bottom:26px; font-size:11.5px; color: var(--dim);
+    letter-spacing:.04em; cursor:pointer; text-decoration:underline;
+  }
+  .add-row-link:hover{ color: var(--gold-soft); }
+  .save-row{ display:flex; align-items:center; gap:16px; }
+  .save-flash{ font-size:11.5px; color: var(--ok); font-style:italic; opacity:0; transition: opacity .3s ease; }
+  .save-flash.show{ opacity:1; }
+  .profile-section{ margin-bottom: 40px; }
+  .profile-section-title{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-soft); margin-bottom:16px; font-weight:600; }
+
+  .habit-today-row{
+    background: var(--bg-2); border:1px solid var(--line); border-radius:8px;
+    padding: 14px 16px; margin-bottom:10px;
+  }
+  .habit-today-top{ display:flex; align-items:center; justify-content:space-between; gap:14px; }
+  .habit-today-text{ font-size:14px; color:var(--parchment); font-weight:300; }
+  .habit-today-btns{ display:flex; gap:8px; flex-shrink:0; }
+  .habit-btn{
+    padding:8px 14px; border:1px solid var(--line); border-radius:8px; cursor:pointer;
+    font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); font-weight:500;
+    transition: background .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .habit-btn:hover{ color:var(--parchment); border-color:#5c5138; }
+  .habit-btn.done.active{ color:#141009; background: var(--ok); border-color: var(--ok); }
+  .habit-btn.failed.active{ color:#141009; background: var(--danger); border-color: var(--danger); }
+  .habit-reflection{
+    margin-top:12px; padding: 12px 14px; border-left:2px solid var(--danger);
+    background: rgba(163,90,63,.08); font-size:12.5px; font-weight:300; line-height:1.6; color: var(--parchment);
+  }
+
+  /* ---------- PAST PREDICTIONS ---------- */
+  .past-section-title{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-soft); margin: 34px 0 14px; font-weight:600; }
+  .past-section-title:first-child{ margin-top:0; }
+  #past-list, #past-list-obj{ display:flex; flex-direction:column; gap: 12px; }
+  .past-card{
+    background: var(--bg-2); border:1px solid var(--line); border-radius:8px;
+    padding: 18px 20px; display:flex; justify-content:space-between; align-items:center; gap:16px;
+  }
+  .past-card.clickable{ cursor:pointer; }
+  .past-card .ptask{ font-size:14.5px; color: var(--parchment); font-weight:400; margin-bottom:5px; }
+  .past-card .pmeta{ font-size:11.5px; color: var(--dim); font-weight:300; letter-spacing:.02em; }
+  .badge{
+    font-size: 10px; letter-spacing:.1em; text-transform:uppercase; padding: 5px 10px;
+    border-radius: 20px; white-space:nowrap; flex-shrink:0; font-weight:600;
+  }
+  .badge.pending{ color: var(--gold-soft); border:1px solid var(--gold); }
+  .badge.ontime{ color: var(--ok); border:1px solid var(--ok); }
+  .badge.late{ color: var(--danger); border:1px solid var(--danger); }
+  .past-card-actions{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0; }
+  .past-card-btns{ display:flex; gap:6px; }
+  .past-icon-btn{
+    width:26px; height:26px; border-radius:50%; border:1px solid var(--line); background:transparent;
+    color: var(--dim); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition: border-color .15s, color .15s;
+  }
+  .past-icon-btn:hover{ border-color: var(--gold); color: var(--gold-soft); }
+  .past-icon-btn.toggle-done{ color: var(--ok); border-color: var(--ok); }
+  .past-icon-btn.toggle-pending{ color: var(--gold-soft); border-color: var(--gold); }
+  .past-icon-btn.delete-btn:hover{ border-color: var(--danger); color: var(--danger); }
+  .past-icon-btn.confirming{ border-color: var(--danger); color: var(--danger); background: rgba(163,90,63,.12); font-size:10px; width:auto; padding:0 8px; }
+  .obj-plan-inline{ margin-top:14px; padding-top:14px; border-top:1px solid var(--line); display:none; }
+  .obj-plan-inline.open{ display:block; }
+
+  .empty-state{ text-align:center; padding: 60px 20px; color: var(--dim); }
+  .empty-state svg{ width:36px; height:36px; margin-bottom:18px; opacity:.5; }
+  .empty-state p{ font-size:13.5px; font-weight:300; font-style: italic; line-height:1.7; }
+
+  .reset-link{
+    display:inline-block; margin-top:30px; font-size:11px; color:#5c5138;
+    text-decoration:underline; cursor:pointer; letter-spacing:.04em;
+  }
+  .reset-link:hover{ color: var(--dim); }
+
+  /* ---------- INICIO: identidad rápida ---------- */
+  .inicio-date{ font-size:13px; color: var(--dim); font-weight:300; margin-bottom:34px; text-transform:capitalize; }
+
+  /* ---------- INICIO: semana + línea de tiempo minimalista ---------- */
+  .week-strip{ display:flex; gap:8px; margin-bottom: 22px; }
+  .day-cell{
+    flex:1; text-align:center; padding: 10px 4px; border:1px solid var(--line); border-radius:8px;
+    color: var(--dim); font-size:11px; font-weight:500;
+  }
+  .day-cell .dow{ display:block; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; opacity:.75; margin-bottom:4px; }
+  .day-cell .dom{ display:block; font-size:14px; font-weight:400; }
+  .day-cell.today{ border-color: var(--gold); color: var(--gold-soft); background: rgba(184,147,63,.08); }
+
+  .timeline-wrap{ margin-bottom: 34px; }
+  .timeline{
+    position:relative; height: 6px; background: var(--bg-2); border:1px solid var(--line);
+    border-radius: 8px; margin: 18px 2px 8px;
+  }
+  .timeline-marker{
+    position:absolute; top:50%; width:10px; height:10px; border-radius:50%;
+    background: var(--gold-soft); transform: translate(-50%,-50%);
+    box-shadow: 0 0 8px rgba(224,196,124,.7);
+  }
+  .timeline-tick{
+    position:absolute; top:50%; width:6px; height:6px; border-radius:50%;
+    transform: translate(-50%,-50%); background: var(--dim); border:1px solid var(--bg);
+  }
+  .timeline-tick.done{ background: var(--ok); }
+  .timeline-labels{ display:flex; justify-content:space-between; font-size:9.5px; color:#5c5138; letter-spacing:.04em; }
+
+  /* ---------- INICIO: rejilla de hábitos ---------- */
+  .habit-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .habit-tile{
+    background: var(--bg-2); border:1px solid var(--line); border-radius:10px;
+    padding: 16px 14px; cursor:pointer; position:relative;
+    transition: border-color .2s ease, background .2s ease;
+    min-height: 92px; display:flex; flex-direction:column; justify-content:space-between;
+  }
+  .habit-tile:hover{ border-color:#5c5138; }
+  .habit-tile.done{ border-color: var(--ok); background: rgba(127,154,106,.08); }
+  .habit-tile.failed{ border-color: var(--danger); background: rgba(163,90,63,.08); }
+  .habit-check{
+    width:20px; height:20px; border:1.5px solid var(--line); border-radius:6px;
+    display:flex; align-items:center; justify-content:center; font-size:12px; color:transparent;
+    flex-shrink:0; margin-bottom:10px;
+  }
+  .habit-tile.done .habit-check{ background: var(--ok); border-color: var(--ok); color:#141009; }
+  .habit-tile.failed .habit-check{ background: var(--danger); border-color: var(--danger); color:#141009; }
+  .habit-tile-text{ font-size:13px; color: var(--parchment); font-weight:300; line-height:1.4; }
+  .habit-tile-emoji{ font-size:15px; }
+  .habit-tile-time{ font-size:10px; color: var(--dim); letter-spacing:.05em; margin-top:8px; }
+  .habit-tile-src{ font-size:9px; color: var(--gold-soft); text-transform:uppercase; letter-spacing:.08em; margin-top:2px; }
+  .habit-tile.add-tile{
+    display:flex; align-items:center; justify-content:center; color: var(--dim); font-size:26px; font-weight:200;
+    border-style:dashed;
+  }
+  .habit-tile.add-tile:hover{ color: var(--gold-soft); border-color: var(--gold); }
+
+  .habit-add-form{
+    background: var(--bg-2); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:22px; display:none;
+  }
+  .habit-add-form.open{ display:block; }
+  .habit-add-form .form-row{ display:flex; gap:10px; margin-bottom:12px; }
+  .habit-add-form input[type="time"]{ max-width:120px; }
+  .habit-add-form input#new-habit-emoji{ max-width:56px; text-align:center; flex:none; }
+  .habit-add-actions{ display:flex; gap:10px; }
+
+  .reflection-stack{ display:flex; flex-direction:column; gap:10px; margin-bottom: 10px; }
+  .reflection-stack .habit-reflection{ border-radius:8px; }
+
+  .empty-habits{ padding: 30px 0; color: var(--dim); font-size:13px; font-style:italic; font-weight:300; }
+
+  /* ---------- HÁBITO MODE (dentro de la consulta) ---------- */
+  .habit-pick-list{ display:flex; flex-direction:column; gap:10px; margin-bottom: 18px; }
+  .habit-pick-row{
+    background: var(--bg-2); border:1px solid var(--line); border-radius:10px;
+    padding: 15px 18px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:12px;
+    transition: border-color .2s ease;
+  }
+  .habit-pick-row:hover{ border-color: var(--gold); }
+  .habit-pick-name{ font-size:14px; color: var(--parchment); font-weight:300; }
+  .habit-pick-time{ font-size:10.5px; color: var(--dim); flex-shrink:0; }
+
+  /* ---------- PERFIL: identidad ---------- */
+  .identity-card{ margin-bottom: 40px; }
+  .identity-name{ font-weight:200; font-size: 26px; color: var(--parchment); letter-spacing:.01em; margin-bottom:6px; }
+  .identity-date{ font-size:12.5px; color: var(--dim); font-weight:300; margin-bottom:22px; text-transform:capitalize; }
+  .identity-phrase{
+    padding: 18px 20px; border-left:2px solid var(--gold); background: rgba(184,147,63,.06);
+    font-size:14px; font-style:italic; font-weight:300; line-height:1.7; color: var(--parchment); margin-bottom:22px;
+  }
+  .life-link{
+    display:inline-flex; align-items:center; gap:8px; border:1px solid var(--gold); color: var(--gold-soft);
+    text-decoration:none; padding: 12px 20px; border-radius:8px; font-size:12px; letter-spacing:.1em;
+    text-transform:uppercase; font-weight:500; transition: background .2s ease, color .2s ease;
+  }
+  .life-link:hover{ background: var(--gold); color:#141009; }
+
+  /* ---------- MOBILE ---------- */
+  @media (max-width: 760px){
+    #app{ flex-direction:column; }
+    #sidebar{ width:100%; flex-direction:row; padding: 16px 18px; align-items:center; border-right:none; border-bottom:1px solid var(--line); }
+    .brand{ margin-bottom:0; }
+    .brand-text{ display:none; }
+    nav{ flex-direction:row; margin-left:auto; gap:2px; }
+    .sidebar-foot{ display:none; }
+    main{ padding: 34px 22px; }
+    .reading-card{ flex-direction:column; align-items:flex-start; }
+    .time-strip{ flex-direction:column; gap:14px; align-items:flex-start; }
+    .time-strip .countdown{ text-align:left; }
+    .example-row input[type="number"]{ width:76px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ VEIL ============ -->
+<div id="veil">
+  <div id="veil-stars"></div>
+
+  <div id="veil-loader">
+    <div class="loader-dot"></div>
+    <div class="loader-text">Cruzando el tiempo&hellip;</div>
+  </div>
+
+  <div id="veil-content">
+    <svg class="compass glow veil-fade" style="--d:0s" viewBox="0 0 200 200">
+      <g class="compass-ring">
+        <circle cx="100" cy="100" r="92" fill="none" stroke="#3a2f1c" stroke-width="1"/>
+        <circle cx="100" cy="100" r="78" fill="none" stroke="#3a2f1c" stroke-width="1"/>
+        <g stroke="#8a7a55" stroke-width="1.4">
+          <line x1="100" y1="8" x2="100" y2="22"/>
+          <line x1="100" y1="178" x2="100" y2="192"/>
+          <line x1="8" y1="100" x2="22" y2="100"/>
+          <line x1="178" y1="100" x2="192" y2="100"/>
+        </g>
+        <g stroke="#5c5138" stroke-width="0.8">
+          <line x1="100" y1="18" x2="100" y2="26" transform="rotate(30 100 100)"/>
+          <line x1="100" y1="18" x2="100" y2="26" transform="rotate(60 100 100)"/>
+          <line x1="100" y1="18" x2="100" y2="26" transform="rotate(120 100 100)"/>
+          <line x1="100" y1="18" x2="100" y2="26" transform="rotate(150 100 100)"/>
+          <line x1="100" y1="18" x2="100" y2="26" transform="rotate(210 100 100)"/>
+          <line x1="100" y1="18" x2="100" y2="26" transform="rotate(240 100 100)"/>
+          <line x1="100" y1="18" x2="100" y2="26" transform="rotate(300 100 100)"/>
+          <line x1="100" y1="18" x2="100" y2="26" transform="rotate(330 100 100)"/>
+        </g>
+      </g>
+      <circle cx="100" cy="100" r="60" fill="none" stroke="#b8933f" stroke-width="1" opacity="0.55"/>
+      <g class="compass-hand">
+        <line x1="100" y1="100" x2="100" y2="46" stroke="#e0c47c" stroke-width="1.6" stroke-linecap="round"/>
+        <line x1="100" y1="100" x2="132" y2="118" stroke="#8a7a55" stroke-width="1.2" stroke-linecap="round"/>
+      </g>
+      <circle cx="100" cy="100" r="4.5" fill="#e0c47c"/>
+    </svg>
+    <div class="eyebrow veil-fade" style="--d:.15s">Una visita desde otro tiempo</div>
+    <h1 class="veil-fade" style="--d:.3s">El Viajero<br><span>Del Tiempo</span></h1>
+    <div class="veil-rule veil-fade" style="--d:.45s"></div>
+    <p class="sub veil-fade" style="--d:.55s">Vengo del momento exacto en que terminas lo que hoy empiezas. Dime qué vas a hacer, y te mostraré cuándo estará hecho.</p>
+
+    <div class="veil-fade" id="veil-gate" style="--d:.65s; display:none;">
+      <p class="lock-hint">Este viajero solo cruza si conoces el código.</p>
+      <div class="lock-row">
+        <input type="text" id="lock-input" placeholder="Código" maxlength="20" autocomplete="off">
+        <button class="btn small" id="lock-enter-btn">Entrar</button>
+      </div>
+      <div class="lock-error" id="lock-error"></div>
+    </div>
+
+    <div class="veil-fade" id="veil-open" style="--d:.65s;">
+      <button class="btn" id="enter-btn">Consultar al viajero</button>
+      <div class="lock-setup-link" id="lock-setup-link">Proteger con un código (opcional)</div>
+      <div class="lock-setup-form" id="lock-setup-form" style="display:none;">
+        <p class="lock-hint">Esto solo bloquea este archivo en este navegador — no es una cuenta real ni se sincroniza entre dispositivos. Si lo olvidas, se borra vaciando los datos del sitio en el navegador.</p>
+        <div class="lock-row">
+          <input type="text" id="lock-new-code" placeholder="Elige un código" maxlength="20" autocomplete="off">
+          <button class="btn small" id="lock-save-btn">Guardar código</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="90" fill="none" stroke="#b8933f" stroke-width="6"/><line x1="100" y1="100" x2="100" y2="55" stroke="#e0c47c" stroke-width="10" stroke-linecap="round"/><line x1="100" y1="100" x2="128" y2="122" stroke="#8a7a55" stroke-width="8" stroke-linecap="round"/></svg>
+      <div class="brand-text"><b>El Viajero</b>Del Tiempo</div>
+    </div>
+    <nav>
+      <div class="nav-item active" data-tab="inicio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/></svg>
+        Inicio
+      </div>
+      <div class="nav-item" data-tab="consulta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        La consulta
+      </div>
+      <div class="nav-item" data-tab="perfil">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3-6.2 7-6.2s7 2.6 7 6.2"/></svg>
+        Mi perfil
+      </div>
+      <div class="nav-item" data-tab="pasadas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>
+        Predicciones pasadas
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <p>&ldquo;Cada consulta queda escrita en el tiempo, aunque el tiempo aún no haya pasado.&rdquo;</p>
+      <div class="sidebar-count" id="sidebar-count">0 visiones registradas</div>
+      <a class="report-bug-link" href="https://claude.ai/new" target="_blank" rel="noopener">Reportar fallos</a>
+    </div>
+  </aside>
+
+  <main>
+    <!-- ===== TAB: INICIO ===== -->
+    <section class="panel active" id="tab-inicio">
+      <div class="eyebrow">Hoy</div>
+      <h2 class="title" style="margin-bottom:4px;">Lo que toca hoy</h2>
+      <div class="inicio-date" id="inicio-date"></div>
+
+      <div class="week-strip" id="week-strip"></div>
+
+      <div class="timeline-wrap">
+        <div class="timeline" id="timeline"></div>
+        <div class="timeline-labels"><span>00:00</span><span>12:00</span><span>24:00</span></div>
+      </div>
+
+      <div class="reflection-stack" id="inicio-reflections"></div>
+
+      <div class="habit-add-form" id="habit-add-form">
+        <div class="form-row">
+          <input type="text" id="new-habit-emoji" placeholder="🙂" maxlength="4" title="Emoji (opcional)">
+          <input type="text" id="new-habit-text" placeholder="Nombre del hábito" maxlength="140">
+          <input type="time" id="new-habit-time" title="Hora a la que se repite (opcional)">
+        </div>
+        <div class="habit-add-actions">
+          <button class="btn small" id="save-new-habit-btn">Añadir</button>
+          <button class="btn ghost small" id="cancel-new-habit-btn">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="habit-grid" id="habit-grid"></div>
+    </section>
+
+    <!-- ===== TAB: CONSULTA ===== -->
+    <section class="panel" id="tab-consulta">
+
+      <div class="mode-toggle">
+        <div class="mode-pill active" id="mode-task-btn">Tarea ahora</div>
+        <div class="mode-pill" id="mode-obj-btn">Objetivo a días</div>
+        <div class="mode-pill" id="mode-habit-btn">Hábito</div>
+      </div>
+
+      <!-- ---- MODO TAREA ---- -->
+      <div id="task-mode-wrap">
+        <div id="form-view">
+          <div class="eyebrow">Nueva consulta</div>
+          <h2 class="title">¿Qué vas a hacer ahora?</h2>
+          <p class="lede">Escribe la tarea tal y como la vas a empezar. En cuanto la nombres, el viajero cerrará los ojos y buscará el instante en que la ves terminada.</p>
+
+          <div class="field">
+            <label for="task-input">La tarea</label>
+            <input type="text" id="task-input" placeholder="p. ej. Terminar el informe del proyecto" maxlength="120" autocomplete="off">
+          </div>
+          <button class="btn" id="ask-btn">Que hable el viajero</button>
+
+          <div id="loading">
+            <svg class="mini-compass" viewBox="0 0 200 200">
+              <g class="compass-ring"><circle cx="100" cy="100" r="90" fill="none" stroke="#3a2f1c" stroke-width="4"/></g>
+              <g class="compass-hand"><line x1="100" y1="100" x2="100" y2="30" stroke="#e0c47c" stroke-width="6" stroke-linecap="round"/></g>
+            </svg>
+            <span>El viajero cierra los ojos y busca el momento&hellip;</span>
+          </div>
+        </div>
+
+        <div id="result">
+          <div class="eyebrow">Lo que he visto</div>
+          <div class="reading-card">
+            <svg class="reading-dial" viewBox="0 0 200 200">
+              <circle cx="100" cy="100" r="90" fill="none" stroke="#3a2f1c" stroke-width="3"/>
+              <circle cx="100" cy="100" r="66" fill="none" stroke="#b8933f" stroke-width="1" opacity="0.5"/>
+              <g id="dial-hand" style="transform-origin:100px 100px;">
+                <line x1="100" y1="100" x2="100" y2="26" stroke="#e0c47c" stroke-width="4" stroke-linecap="round"/>
+              </g>
+              <circle cx="100" cy="100" r="5" fill="#e0c47c"/>
+            </svg>
+            <div class="reading-text">
+              <div class="eyebrow" style="margin-bottom:12px;">Sobre &laquo;<span id="result-task-name"></span>&raquo;</div>
+              <p class="vision-quote" id="vision-quote"></p>
+            </div>
+          </div>
+
+          <div class="time-strip">
+            <div>
+              <div class="big" id="predicted-time-big">—</div>
+              <div class="lbl">Si empiezas ahora, sin romper el hilo</div>
+            </div>
+            <div class="countdown">
+              <div class="big" id="countdown-big">—</div>
+              <div class="lbl">tiempo restante</div>
+            </div>
+          </div>
+
+          <div class="verdict" id="verdict-box">
+            <span id="verdict-text"></span>
+            <div class="stat" id="verdict-stat"></div>
+          </div>
+
+          <div class="result-actions">
+            <button class="btn" id="complete-btn">Marcar como terminado</button>
+            <button class="btn ghost" id="new-consult-btn">Nueva consulta</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- MODO OBJETIVO ---- -->
+      <div id="objective-mode-wrap" style="display:none;">
+        <div id="obj-form-view">
+          <div class="eyebrow">Nueva visión larga</div>
+          <h2 class="title">¿Qué vas a conseguir en varios días?</h2>
+          <p class="lede">Dime el objetivo y qué días de la semana puedes dedicarle tiempo. El viajero trazará la fecha en que lo tendrás hecho, y el camino de sesiones hasta llegar ahí.</p>
+
+          <div class="field">
+            <label for="objective-input">El objetivo</label>
+            <input type="text" id="objective-input" placeholder="p. ej. Terminar el proyecto X" maxlength="120" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label>Días de la semana disponibles</label>
+            <div class="day-chips" id="day-chips">
+              <div class="day-chip active" data-day="1">L</div>
+              <div class="day-chip active" data-day="2">M</div>
+              <div class="day-chip active" data-day="3">X</div>
+              <div class="day-chip active" data-day="4">J</div>
+              <div class="day-chip active" data-day="5">V</div>
+              <div class="day-chip" data-day="6">S</div>
+              <div class="day-chip" data-day="0">D</div>
+            </div>
+            <div class="field-hint" id="obj-days-hint"></div>
+          </div>
+
+          <button class="btn" id="ask-obj-btn">Que el viajero trace el camino</button>
+
+          <div id="loading-obj">
+            <svg class="mini-compass" viewBox="0 0 200 200">
+              <g class="compass-ring"><circle cx="100" cy="100" r="90" fill="none" stroke="#3a2f1c" stroke-width="4"/></g>
+              <g class="compass-hand"><line x1="100" y1="100" x2="100" y2="30" stroke="#e0c47c" stroke-width="6" stroke-linecap="round"/></g>
+            </svg>
+            <span>El viajero recorre los días que aún no has vivido&hellip;</span>
+          </div>
+        </div>
+
+        <div id="result-obj">
+          <div class="eyebrow">El camino que he visto</div>
+          <div class="reading-card">
+            <svg class="reading-dial" viewBox="0 0 200 200">
+              <circle cx="100" cy="100" r="90" fill="none" stroke="#3a2f1c" stroke-width="3"/>
+              <circle cx="100" cy="100" r="66" fill="none" stroke="#b8933f" stroke-width="1" opacity="0.5"/>
+              <g style="transform-origin:100px 100px; transform:rotate(140deg);">
+                <line x1="100" y1="100" x2="100" y2="26" stroke="#e0c47c" stroke-width="4" stroke-linecap="round"/>
+              </g>
+              <circle cx="100" cy="100" r="5" fill="#e0c47c"/>
+            </svg>
+            <div class="reading-text">
+              <div class="eyebrow" style="margin-bottom:12px;">Sobre &laquo;<span id="result-obj-name"></span>&raquo;</div>
+              <p class="vision-quote" id="vision-obj-quote"></p>
+            </div>
+          </div>
+
+          <div class="time-strip">
+            <div>
+              <div class="big" id="obj-target-date-big">—</div>
+              <div class="lbl">Fecha en que lo veo hecho</div>
+            </div>
+            <div class="countdown">
+              <div class="big" id="obj-sessions-count">—</div>
+              <div class="lbl">sesiones de trabajo</div>
+            </div>
+          </div>
+
+          <div class="plan-summary" id="obj-plan-summary"></div>
+          <div class="plan-list" id="obj-plan-list"></div>
+
+          <div class="result-actions">
+            <button class="btn ghost" id="new-obj-consult-btn">Nueva consulta</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- MODO HÁBITO ---- -->
+      <div id="habit-mode-wrap" style="display:none;">
+        <div class="eyebrow">Consulta rápida</div>
+        <h2 class="title">¿Cuál de tus hábitos te falta?</h2>
+        <p class="lede">Elige uno y el viajero te dirá cuánto te va a llevar hoy. En cuanto lo termines, queda marcado.</p>
+
+        <div class="habit-pick-list" id="habit-pick-list"></div>
+        <div id="habit-pick-empty" class="empty-habits" style="display:none;">Hoy ya no te queda ningún hábito pendiente. Bien hecho.</div>
+
+        <button class="btn ghost small" id="add-habit-from-consult-btn">+ Añadir un hábito nuevo</button>
+      </div>
+    </section>
+
+    <!-- ===== TAB: PERFIL ===== -->
+    <section class="panel wide" id="tab-perfil">
+      <div class="identity-card">
+        <div class="eyebrow">Quién consulta al viajero</div>
+        <div class="identity-name">Miguel Cuesta</div>
+        <div class="identity-date" id="profile-date"></div>
+        <div class="identity-phrase" id="profile-phrase"></div>
+        <a class="life-link" href="https://app.heroes.academy/" target="_blank" rel="noopener">Tu vida ideal &rarr;</a>
+        <div class="lock-manage" id="lock-manage" style="display:none; margin-top:16px;">
+          <span class="add-row-link" id="remove-lock-link">Quitar código de acceso</span>
+          <span class="add-row-link" id="relock-link" style="margin-left:18px;">Bloquear ahora</span>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <div class="profile-section-title">Mis objetivos principales</div>
+        <p class="field-hint" style="margin-bottom:16px;">Lo que persigues de fondo. No hace falta que sea a corto plazo.</p>
+        <div id="goal-rows"></div>
+        <div class="add-row-link" id="add-goal-btn">+ Añadir otro objetivo</div>
+      </div>
+
+      <div class="save-row">
+        <button class="btn" id="save-profile-btn">Guardar mis objetivos</button>
+        <span class="save-flash" id="save-flash">Guardado</span>
+      </div>
+    </section>
+
+    <!-- ===== TAB: PASADAS ===== -->
+    <section class="panel" id="tab-pasadas">
+      <div class="eyebrow">El libro de las visiones</div>
+      <h2 class="title">Predicciones pasadas</h2>
+      <p class="lede">Todo lo que el viajero ha visto sobre ti, y lo que finalmente ocurrió.</p>
+
+      <div id="past-empty" style="display:none;">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#8a7a55" stroke-width="1.2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <p>Aún no he visto nada de ti.<br>Haz tu primera consulta y quedará escrita aquí.</p>
+        </div>
+      </div>
+
+      <div id="past-content" style="display:none;">
+        <div class="past-section-title">Tareas</div>
+        <div id="past-list"></div>
+        <div class="past-section-title" id="past-obj-title" style="display:none;">Objetivos a días</div>
+        <div id="past-list-obj"></div>
+      </div>
+
+      <div style="text-align:center;" id="reset-wrap"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const $ = (sel) => document.querySelector(sel);
+  const $all = (sel) => document.querySelectorAll(sel);
+
+  // ---------- STORAGE HELPERS ----------
+  // Preferimos window.storage cuando existe (visor de artefactos de Claude).
+  // Si no existe, o si en algún momento falla al usarlo (puede pasar según
+  // el entorno), caemos a localStorage de forma permanente para el resto de
+  // la sesión — así no perdemos datos a medias entre dos sistemas distintos.
+  const hasStorage = !!(window.storage && window.storage.set);
+  const LS_PREFIX = 'viajero-del-tiempo:';
+  let storageBroken = false;
+  let memoryFallback = {}; // último recurso si ni localStorage está disponible
+
+  async function storageSet(key, value, shared){
+    if(hasStorage && !storageBroken){
+      try{
+        const res = await window.storage.set(key, value, !!shared);
+        if(res) return res;
+      }catch(e){
+        console.error('window.storage.set falló, paso a localStorage de respaldo para el resto de la sesión', e);
+        storageBroken = true;
+      }
+    }
+    try{ localStorage.setItem(LS_PREFIX + key, value); return { key, value, shared: !!shared }; }
+    catch(e){ memoryFallback[key] = value; return { key, value, shared: !!shared }; }
+  }
+
+  async function storageGet(key, shared){
+    if(hasStorage && !storageBroken){
+      try{
+        const res = await window.storage.get(key, !!shared);
+        if(res) return res;
+      }catch(e){
+        console.error('window.storage.get falló, paso a localStorage de respaldo para el resto de la sesión', e);
+        storageBroken = true;
+      }
+    }
+    try{
+      const v = localStorage.getItem(LS_PREFIX + key);
+      if(v !== null) return { key, value: v, shared: !!shared };
+    }catch(e){ /* sigue al fallback de memoria */ }
+    return memoryFallback[key] !== undefined ? { key, value: memoryFallback[key], shared: !!shared } : null;
+  }
+
+  async function storageDelete(key, shared){
+    if(hasStorage && !storageBroken){
+      try{ return await window.storage.delete(key, !!shared); }
+      catch(e){ storageBroken = true; }
+    }
+    try{ localStorage.removeItem(LS_PREFIX + key); }catch(e){}
+    delete memoryFallback[key];
+    return { key, deleted: true, shared: !!shared };
+  }
+
+  async function storageList(prefix, shared){
+    if(hasStorage && !storageBroken){
+      try{ return await window.storage.list(prefix, !!shared); }
+      catch(e){ storageBroken = true; }
+    }
+    const keys = [];
+    try{
+      for(let i = 0; i < localStorage.length; i++){
+        const k = localStorage.key(i);
+        if(k && k.indexOf(LS_PREFIX) === 0){
+          const real = k.slice(LS_PREFIX.length);
+          if(!prefix || real.indexOf(prefix) === 0) keys.push(real);
+        }
+      }
+    }catch(e){}
+    Object.keys(memoryFallback).forEach(k => {
+      if((!prefix || k.indexOf(prefix) === 0) && keys.indexOf(k) === -1) keys.push(k);
+    });
+    return { keys };
+  }
+
+  async function saveEntry(entry){
+    await storageSet('prediction:' + entry.id, JSON.stringify(entry), false);
+  }
+
+  async function saveObjective(entry){
+    await storageSet('objective:' + entry.id, JSON.stringify(entry), false);
+  }
+
+  async function loadAllEntries(){
+    const out = [];
+    try{
+      const listRes = await storageList('prediction:', false);
+      const keys = (listRes && listRes.keys) ? listRes.keys : [];
+      for(const k of keys){
+        try{
+          const r = await storageGet(k, false);
+          if(r && r.value) out.push(JSON.parse(r.value));
+        }catch(e){ /* clave dañada, se ignora */ }
+      }
+    }catch(e){ console.error('No se pudieron leer las visiones', e); }
+    out.sort((a,b) => b.createdAt - a.createdAt);
+    return out;
+  }
+
+  async function loadAllObjectives(){
+    const out = [];
+    try{
+      const listRes = await storageList('objective:', false);
+      const keys = (listRes && listRes.keys) ? listRes.keys : [];
+      for(const k of keys){
+        try{
+          const r = await storageGet(k, false);
+          if(r && r.value) out.push(JSON.parse(r.value));
+        }catch(e){ /* clave dañada, se ignora */ }
+      }
+    }catch(e){ console.error('No se pudieron leer los objetivos', e); }
+    out.sort((a,b) => b.createdAt - a.createdAt);
+    return out;
+  }
+
+  async function deleteAllEntries(){
+    try{
+      const listRes = await storageList('prediction:', false);
+      const keys = (listRes && listRes.keys) ? listRes.keys : [];
+      for(const k of keys){ try{ await storageDelete(k, false); }catch(e){} }
+      const listRes2 = await storageList('objective:', false);
+      const keys2 = (listRes2 && listRes2.keys) ? listRes2.keys : [];
+      for(const k of keys2){ try{ await storageDelete(k, false); }catch(e){} }
+    }catch(e){ console.error('No se pudieron borrar las visiones', e); }
+  }
+
+  async function deleteEntryById(id){
+    try{ await storageDelete('prediction:' + id, false); }
+    catch(e){ console.error('No se pudo borrar la entrada', e); }
+  }
+
+  async function setEntryCompleted(id, completed){
+    try{
+      const r = await storageGet('prediction:' + id, false);
+      if(!r || !r.value) return;
+      const entry = JSON.parse(r.value);
+      entry.completed = completed;
+      if(completed){
+        if(!entry.completedAt) entry.completedAt = Date.now();
+        if(entry.actualMinutes == null) entry.actualMinutes = null; // sin dato real, se muestra sin comparar tiempos
+      } else {
+        entry.completedAt = null;
+        entry.actualMinutes = null;
+      }
+      await storageSet('prediction:' + id, JSON.stringify(entry), false);
+    }catch(e){ console.error('No se pudo actualizar el estado de la entrada', e); }
+  }
+
+  // ---------- PROFILE STORAGE ----------
+  function defaultProfile(){
+    return {
+      productiveTime: 'manana',
+      mainGoals: [],
+      habits: [],
+      examples: [
+        { name: 'escribir el guion de un vídeo', minutes: 45 },
+        { name: 'grabar un vídeo corto', minutes: 15 },
+        { name: 'editar un vídeo', minutes: 150 },
+        { name: 'responder mensajes de la comunidad', minutes: 15 }
+      ],
+      distractions: 'el móvil y las redes sociales',
+      sessionLength: 90
+    };
+  }
+
+  async function loadProfile(){
+    try{
+      const r = await storageGet('profile', false);
+      return (r && r.value) ? Object.assign(defaultProfile(), JSON.parse(r.value)) : defaultProfile();
+    }catch(e){ return defaultProfile(); }
+  }
+
+  async function saveProfile(p){
+    try{ await storageSet('profile', JSON.stringify(p), false); }
+    catch(e){ console.error('No se pudo guardar el perfil', e); }
+  }
+
+  // ---------- HÁBITOS DIARIOS ----------
+  function todayKey(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  async function loadTodayLog(){
+    try{
+      const r = await storageGet('habit-log:' + todayKey(), false);
+      return (r && r.value) ? JSON.parse(r.value) : { done: [], failed: [] };
+    }catch(e){ return { done: [], failed: [] }; }
+  }
+
+  async function saveTodayLog(log){
+    try{ await storageSet('habit-log:' + todayKey(), JSON.stringify(log), false); }
+    catch(e){ console.error('No se pudo guardar el registro de hábitos', e); }
+  }
+
+  const REFLECTION_PHRASES = [
+    (h) => `No hiciste &laquo;${h}&raquo; hoy. El tiempo no se detiene a esperarte — ¿qué vas a hacer distinto mañana?`,
+    (h) => `&laquo;${h}&raquo; se quedó sin hacer. Un día suelto no rompe nada. Varios días seguidos, sí.`,
+    (h) => `He visto muchos días como este. La pregunta no es por qué hoy, sino si mañana va a repetirse.`,
+    (h) => `&laquo;${h}&raquo; pendiente. No te castigo por ello — solo te lo dejo escrito, para que tú decidas qué pesa más.`,
+    (h) => `Otra vez sin &laquo;${h}&raquo;. El futuro que viste no se construye solo los días fáciles.`
+  ];
+  function reflectionFor(habitText){
+    return REFLECTION_PHRASES[Math.floor(Math.random() * REFLECTION_PHRASES.length)](habitText);
+  }
+
+  // ---------- STATE ----------
+  let current = null; // active task reading in memory
+  let currentObjective = null; // active objective reading in memory
+  let countdownTimer = null;
+  let profile = defaultProfile();
+  let consultMode = 'task';
+
+  // ---------- PREDICTION ENGINE ----------
+  function normalizeWords(text){
+    return text.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9 ]/g,' ')
+      .split(/\s+/).filter(w => w.length > 3);
+  }
+
+  function keywordOverlap(exampleName, task){
+    const set = new Set(normalizeWords(exampleName));
+    const words = normalizeWords(task);
+    let hits = 0;
+    words.forEach(w => { if(set.has(w)) hits++; });
+    return hits;
+  }
+
+  function genericBaseMinutes(words){
+    const complexity = Math.min(Math.max(words, 1), 9);
+    return 10 + complexity * 6;
+  }
+
+  // Categorías de tarea: cuando el texto encaja aquí, el viajero deja de adivinar
+  // por longitud de frase y usa un tiempo base propio de ese tipo de tarea.
+  // Organizado en 6 secciones según lo que se sabe de ti. El orden importa:
+  // las categorías más específicas van antes que las genéricas, para que una
+  // palabra ancha no se coma la coincidencia de una más concreta.
+  const CATEGORIES = [
+
+    // ---- RECORDS PERSONALES / HAZAÑAS (van primero: su vocabulario es más
+    // específico que el de una sesión de entreno normal, y debe ganar la comparación) ----
+    { section:'records', name:'record', keywords:['record','pr personal','marca personal','batir marca','superar marca'], minutes:45, hours:4 },
+    { section:'records', name:'reto',   keywords:['reto','desafio','challenge'],                                          minutes:45, hours:5 },
+    { section:'records', name:'hito',   keywords:['hito','logro','meta cumplida'],                                        minutes:30, hours:3 },
+
+    // ---- FÍSICO (entreno 6 días/semana, boxeo, dominadas) ----
+    // Tiempos reales de Miguel: gym ~51 min, correr ~40 min, bici ~1h20 (80 min).
+    // Antes "cardio" metía correr y bici en el mismo saco a 45 min — la bici
+    // real dobla ese tiempo, así que van separados.
+    { section:'fisico', name:'dominadas',    keywords:['dominadas','pull ups','pullups','flexiones','fondos','calistenia'], minutes:30, hours:3 },
+    { section:'fisico', name:'boxeo',        keywords:['boxeo','sparring','saco','boxear'],                                  minutes:60, hours:5 },
+    { section:'fisico', name:'gimnasio',     keywords:['gimnasio','pesas','entrenar','entreno','gym','fuerza','hipertrofia','sentadillas','peso muerto','abdominales'], minutes:51, hours:6 },
+    { section:'fisico', name:'correr',       keywords:['correr','running','trotar','carrera'],                                minutes:40, hours:4 },
+    { section:'fisico', name:'bici',         keywords:['bici','bicicleta','ciclismo','pedalear'],                             minutes:80, hours:6 },
+    { section:'fisico', name:'nadar',        keywords:['nadar','natacion','piscina'],                                        minutes:45, hours:4 },
+    { section:'fisico', name:'movilidad',    keywords:['estirar','estiramientos','movilidad','calentamiento'],               minutes:15, hours:2 },
+
+    // ---- TRABAJO (deep work, protocolo de negocio, El Consultor / Founder System) ----
+    { section:'trabajo', name:'guion',         keywords:['guion','guión','script','copy','anuncio','ads'],                    minutes:45,  hours:8  },
+    { section:'trabajo', name:'edicion',       keywords:['editar','edicion','edición','montaje','montar'],                   minutes:150, hours:20 },
+    { section:'trabajo', name:'grabacion',     keywords:['grabar','grabacion','grabación','rodar'],                          minutes:15,  hours:6  },
+    { section:'trabajo', name:'diseno',        keywords:['diseño','diseñar','canva','miniatura','portada','thumbnail'],      minutes:30,  hours:8  },
+    { section:'trabajo', name:'documento',     keywords:['informe','documento','redactar','texto','articulo','artículo'],    minutes:60,  hours:10 },
+    { section:'trabajo', name:'codigo',        keywords:['codigo','código','programar','feature','bug','desarrollar app','landing page'], minutes:75,  hours:14 },
+    { section:'trabajo', name:'avatar_oferta', keywords:['avatar','nicho','oferta','sop','diagnostico','protocolo','mvp'],   minutes:60,  hours:10 },
+    { section:'trabajo', name:'planificacion', keywords:['planificar','planificacion','estrategia','roadmap'],               minutes:45,  hours:6  },
+    { section:'trabajo', name:'investigacion', keywords:['investigar','investigacion','research'],                           minutes:60,  hours:8  },
+    { section:'trabajo', name:'ventas',        keywords:['venta','vender','cerrar trato'],                                   minutes:30,  hours:6  },
+    { section:'trabajo', name:'outreach',      keywords:['outreach','prospectar','contactar','prospeccion'],                 minutes:30,  hours:10 },
+    { section:'trabajo', name:'metricas',      keywords:['metricas','analitica','analytics','insights','estadisticas'],      minutes:30,  hours:4  },
+    { section:'trabajo', name:'revision',      keywords:['revisar','revision','feedback','corregir'],                        minutes:30,  hours:3  },
+    { section:'trabajo', name:'reunion',       keywords:['llamada','reunion','reunión','call'],                              minutes:40,  hours:6  },
+    { section:'trabajo', name:'correo',        keywords:['email','correo','gmail','inbox','bandeja de entrada'],             minutes:15,  hours:4  },
+    { section:'trabajo', name:'mensajes',      keywords:['mensaje','mensajes','dm','dms','whatsapp','ticket','tickets','soporte'], minutes:15,  hours:4  },
+
+    // ---- CLUB (Growth Club, Founder System, comunidad de pago) ----
+    { section:'club', name:'evento',      keywords:['directo','live','webinar','masterclass','evento'],                     minutes:90, hours:8  },
+    { section:'club', name:'mentoria',    keywords:['mentoria','llamada grupal','acompañamiento'],                          minutes:45, hours:5  },
+    { section:'club', name:'onboarding',  keywords:['onboarding','bienvenida','nuevo miembro'],                             minutes:20, hours:3  },
+    { section:'club', name:'cobros',      keywords:['cobrar','facturar','pago','suscripcion','facturacion'],                minutes:20, hours:3  },
+    { section:'club', name:'moderar',     keywords:['moderar','moderacion','gestionar comunidad'],                          minutes:30, hours:4  },
+    { section:'club', name:'curso',       keywords:['curso','modulo','módulo','capitulo','capítulo','clase','temario'],     minutes:90, hours:16 },
+    { section:'club', name:'comunidad',   keywords:['comunidad','skool','whop','growth club','founder system','ebook'],     minutes:60, hours:12 },
+
+    // ---- REDES (contenido en redes sociales) ----
+    { section:'redes', name:'publicar',      keywords:['publicar','programar publicacion','subir contenido'],               minutes:20, hours:2 },
+    { section:'redes', name:'comentarios',   keywords:['comentarios','responder comentarios','interactuar'],                minutes:20, hours:2 },
+    { section:'redes', name:'colaboracion',  keywords:['colaboracion','colab'],                                             minutes:60, hours:6 },
+    { section:'redes', name:'hashtags',      keywords:['hashtags','seo','tags'],                                            minutes:10, hours:1 },
+    { section:'redes', name:'video',         keywords:['video','vídeo','reel','tiktok','short','story','stories'],          minutes:90, hours:14 }
+  ];
+
+  function normalizeFlat(text){
+    return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ');
+  }
+
+  function normalizeTaskKey(text){
+    return normalizeFlat(text || '').trim().replace(/\s+/g, ' ');
+  }
+
+  function dayKeyOf(timestamp){
+    const d = new Date(timestamp);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  // Busca si ya existe una predicción de hoy para el mismo hábito (por id)
+  // o, si es una consulta libre, para el mismo texto (normalizado).
+  async function findTodayEntry(rawTask, linkedHabitId){
+    const entries = await loadAllEntries();
+    const today = dayKeyOf(Date.now());
+    if(linkedHabitId){
+      return entries.find(e => e.linkedHabitId === linkedHabitId && dayKeyOf(e.createdAt) === today) || null;
+    }
+    const key = normalizeTaskKey(rawTask);
+    return entries.find(e => !e.linkedHabitId && normalizeTaskKey(e.rawInput || e.task) === key && dayKeyOf(e.createdAt) === today) || null;
+  }
+
+  function detectCategory(task){
+    // Exige palabra completa (o plural simple +s/+es), no un simple prefijo.
+    // Antes "recordar" hacía match con "record", "ventana" con "venta",
+    // "cursor" con "curso" y "retocar" con "reto" solo por empezar igual.
+    const normFlat = normalizeFlat(task).trim();
+    const tokens = normFlat.split(/\s+/).filter(Boolean);
+    const tokenSet = new Set(tokens);
+    const normPadded = ' ' + normFlat + ' ';
+    for(const cat of CATEGORIES){
+      for(const kw of cat.keywords){
+        // La keyword también se normaliza (sin acentos): si no, cualquier
+        // palabra clave escrita con tilde ("diseño", "acompañamiento",
+        // "módulo"...) queda muerta y nunca puede coincidir con nada,
+        // porque el texto del usuario sí se normaliza sin acentos.
+        const kwNorm = normalizeFlat(kw).trim();
+        if(kwNorm.includes(' ')){
+          if(normPadded.includes(' ' + kwNorm + ' ')) return cat;
+        } else if(tokenSet.has(kwNorm) || tokenSet.has(kwNorm + 's') || tokenSet.has(kwNorm + 'es')){
+          return cat;
+        }
+      }
+    }
+    return null;
+  }
+
+  // ---------- DETECCIÓN DE TIEMPO PROPUESTO POR EL USUARIO ----------
+  // Si el usuario escribe algo como "editar 30min" o "escribir informe 1h30",
+  // el viajero no predice: le reta a apretar un poco más de lo que él mismo se propone.
+  function parseStatedTime(raw){
+    const norm = raw.trim();
+    // horas (+ minutos opcionales): "1h", "2 horas", "1h30", "1 hora 30 min"
+    let m = norm.match(/(\d+(?:[.,]\d+)?)\s*h(?:oras?)?\s*(?:y)?\s*(\d+)?\s*(?:min(?:utos)?|m)?\b/i);
+    if(m){
+      const h = parseFloat(m[1].replace(',', '.'));
+      const mm = m[2] ? parseInt(m[2], 10) : 0;
+      const minutes = Math.round(h * 60 + mm);
+      const cleanTask = (norm.slice(0, m.index) + norm.slice(m.index + m[0].length)).replace(/\s{2,}/g, ' ').trim();
+      return { minutes, cleanTask: cleanTask || norm };
+    }
+    // solo minutos: "30min", "30 min", "30 minutos", "30m"
+    m = norm.match(/(\d+)\s*(?:min(?:utos)?|m)\b/i);
+    if(m){
+      const minutes = parseInt(m[1], 10);
+      const cleanTask = (norm.slice(0, m.index) + norm.slice(m.index + m[0].length)).replace(/\s{2,}/g, ' ').trim();
+      return { minutes, cleanTask: cleanTask || norm };
+    }
+    return null;
+  }
+
+  function computeChallengeMinutes(statedMinutes){
+    const reductionPct = 0.12 + Math.random() * 0.08; // entre 12% y 20% menos
+    let challenge = Math.round(statedMinutes * (1 - reductionPct));
+    challenge = Math.max(3, Math.min(statedMinutes - 1, challenge));
+    return challenge;
+  }
+
+  function challengeQuote(taskHtml, statedStr, challengeStr){
+    const templates = [
+      `Dices ${statedStr} para &laquo;${taskHtml}&raquo;. Pero yo ya te he visto darlo por hecho en <b>${challengeStr}</b> &mdash; puedes dar más de ti.`,
+      `${statedStr} es lo que tú calculas. Yo lo vi cerrado en <b>${challengeStr}</b>. No te des tanto margen.`,
+      `He visto el rato de más que te estabas regalando. &laquo;${taskHtml}&raquo; te cabe en <b>${challengeStr}</b>, si aprietas desde el primer minuto.`
+    ];
+    return templates[Math.floor(Math.random() * templates.length)];
+  }
+
+  function personalPaceMultiplier(){
+    const examples = (profile.examples || []).filter(e => e.name && e.minutes);
+    if(examples.length === 0) return 1;
+    const ratios = examples.map(e => {
+      const words = e.name.trim().split(/\s+/).filter(Boolean).length || 1;
+      return e.minutes / genericBaseMinutes(words);
+    }).filter(r => isFinite(r) && r > 0);
+    if(ratios.length === 0) return 1;
+    const avg = ratios.reduce((a,b) => a+b, 0) / ratios.length;
+    return Math.min(Math.max(avg, 0.4), 3.2);
+  }
+
+  function pickMinutes(task){
+    // 1. ¿coincide con una tarea real que ya has cronometrado? Manda eso, sin más.
+    const examples = (profile.examples || []).filter(e => e.name && e.minutes);
+    if(examples.length){
+      let best = null, bestScore = 0;
+      examples.forEach(e => {
+        const score = keywordOverlap(e.name, task);
+        if(score > bestScore){ bestScore = score; best = e; }
+      });
+      if(best && bestScore >= 1){
+        const variance = 0.9 + Math.random() * 0.2; // ±10%
+        return Math.max(4, Math.round(best.minutes * variance));
+      }
+    }
+    // 2. ¿reconozco el tipo de tarea (guion, edición, mensajes, código...)? Uso su tiempo base, ajustado a tu ritmo.
+    const multiplier = personalPaceMultiplier();
+    const cat = detectCategory(task);
+    if(cat){
+      const variance = 0.88 + Math.random() * 0.24; // ±12%
+      return Math.max(5, Math.round(cat.minutes * multiplier * variance));
+    }
+    // 3. No reconozco nada: única situación donde caigo en la estimación genérica por longitud.
+    const words = task.trim().split(/\s+/).filter(Boolean).length || 1;
+    const base = genericBaseMinutes(words);
+    const variance = 0.88 + Math.random() * 0.24;
+    return Math.max(6, Math.min(600, Math.round(base * multiplier * variance)));
+  }
+
+  function formatMinutes(mins){
+    if(mins < 60) return mins + ' min';
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m === 0 ? (h + 'h') : (h + 'h ' + m + 'm');
+  }
+
+  function visionQuote(task, timeStr){
+    const templates = [
+      `He visto el instante exacto: <b>&laquo;${task}&raquo;</b> queda cerrado dentro de <b>${timeStr}</b>, si no rompes el hilo del ahora.`,
+      `El polvo del reloj ya se movía cuando llegué. <b>&laquo;${task}&raquo;</b> termina en <b>${timeStr}</b> &mdash; lo vi con mis propios ojos, en un tiempo que ya es este.`,
+      `No hace falta que dudes. Dentro de <b>${timeStr}</b> esto estará hecho. Lo sé porque vengo de ahí.`,
+      `Crucé años para decirte esto una sola vez: <b>${timeStr}</b>. Ni un minuto más, si mantienes el paso que llevas ahora.`,
+      `He estado en el segundo exacto en que sueltas &laquo;${task}&raquo;. Faltan <b>${timeStr}</b> para llegar allí.`
+    ];
+    return templates[Math.floor(Math.random() * templates.length)];
+  }
+
+  // ---------- OBJECTIVE ENGINE ----------
+  function estimateObjectiveMinutes(text){
+    const multiplier = personalPaceMultiplier();
+    const cat = detectCategory(text);
+    let hours;
+    if(cat){
+      hours = cat.hours * multiplier * (0.9 + Math.random() * 0.2); // ±10%
+    } else {
+      const words = text.trim().split(/\s+/).filter(Boolean).length || 1;
+      const complexity = Math.min(Math.max(words, 2), 14);
+      hours = (5 + complexity * 2.4) * multiplier * (0.9 + Math.random() * 0.2);
+    }
+    hours = Math.max(3, Math.min(120, hours));
+    return Math.round(hours * 60);
+  }
+
+  function buildSessionPlan(totalMinutes, sessionLength, activeDays, startFrom){
+    const sessions = [];
+    let remaining = totalMinutes;
+    const cursor = new Date(startFrom);
+    cursor.setHours(0,0,0,0);
+    cursor.setDate(cursor.getDate() + 1); // empezamos mañana
+    let guard = 0;
+    while(remaining > 0 && guard < 400){
+      if(activeDays.includes(cursor.getDay())){
+        const thisLen = Math.min(sessionLength, remaining);
+        sessions.push({ date: new Date(cursor), minutes: thisLen });
+        remaining -= thisLen;
+      }
+      cursor.setDate(cursor.getDate() + 1);
+      guard++;
+    }
+    return sessions;
+  }
+
+  function sessionLabel(taskHtml, index, total){
+    if(total === 1) return `Única sesión: completa &laquo;${taskHtml}&raquo; de principio a fin.`;
+    if(index === 0) return `Arranque: define el primer paso concreto de &laquo;${taskHtml}&raquo; y ponlo en marcha.`;
+    if(index === total - 1) return `Cierre: últimos ajustes y entrega de &laquo;${taskHtml}&raquo;.`;
+    const mid = [
+      `Sesión ${index+1} de ${total}: avanza el siguiente bloque de &laquo;${taskHtml}&raquo;.`,
+      `Sesión ${index+1} de ${total}: sigue construyendo &laquo;${taskHtml}&raquo;, sin perder el ritmo.`,
+      `Sesión ${index+1} de ${total}: un tramo más de &laquo;${taskHtml}&raquo; queda hecho hoy.`
+    ];
+    return mid[index % mid.length];
+  }
+
+  function sessionLabelPlain(taskPlain, index, total){
+    if(total === 1) return `Única sesión: completa «${taskPlain}» de principio a fin.`;
+    if(index === 0) return `Arranque: define el primer paso concreto de «${taskPlain}» y ponlo en marcha.`;
+    if(index === total - 1) return `Cierre: últimos ajustes y entrega de «${taskPlain}».`;
+    const mid = [
+      `Sesión ${index+1} de ${total}: avanza el siguiente bloque de «${taskPlain}».`,
+      `Sesión ${index+1} de ${total}: sigue construyendo «${taskPlain}», sin perder el ritmo.`,
+      `Sesión ${index+1} de ${total}: un tramo más de «${taskPlain}» queda hecho hoy.`
+    ];
+    return mid[index % mid.length];
+  }
+
+  function stripHtmlTags(html){
+    return html.replace(/<[^>]*>/g, '')
+      .replace(/&laquo;/g, '«').replace(/&raquo;/g, '»')
+      .replace(/&mdash;/g, '—').replace(/&amp;/g, '&');
+  }
+
+  function formatDateLong(d){
+    return d.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  }
+  function formatDateShort(d){
+    return d.toLocaleDateString('es-ES', { day:'numeric', month:'short' });
+  }
+
+  function escapeHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ---------- UI: TABS ----------
+  $all('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      $all('.nav-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      $all('.panel').forEach(p => p.classList.remove('active'));
+      $('#tab-' + item.dataset.tab).classList.add('active');
+      if(item.dataset.tab === 'pasadas') renderPast();
+      if(item.dataset.tab === 'perfil') renderProfileForm();
+      if(item.dataset.tab === 'inicio') renderInicio();
+    });
+  });
+
+  // ---------- VEIL: estrellas de fondo ----------
+  function initVeilStars(){
+    const wrap = $('#veil-stars');
+    if(!wrap) return;
+    let html = '';
+    for(let i = 0; i < 55; i++){
+      const size = (Math.random() * 1.6 + 0.6).toFixed(1);
+      const top = (Math.random() * 100).toFixed(1);
+      const left = (Math.random() * 100).toFixed(1);
+      const delay = (Math.random() * 3).toFixed(2);
+      const dur = (2.2 + Math.random() * 3).toFixed(2);
+      html += `<div class="star" style="width:${size}px;height:${size}px;top:${top}%;left:${left}%;animation:starTwinkle ${dur}s ease-in-out infinite;animation-delay:${delay}s;"></div>`;
+    }
+    wrap.innerHTML = html;
+  }
+
+  // ---------- VEIL: código de acceso local (no es una cuenta real) ----------
+  const LOCK_KEY = 'lock-code';
+  function getLockCode(){
+    try{ return localStorage.getItem(LS_PREFIX + LOCK_KEY); }catch(e){ return null; }
+  }
+  function setLockCodeStorage(code){
+    try{ localStorage.setItem(LS_PREFIX + LOCK_KEY, code); }catch(e){}
+  }
+  function clearLockCodeStorage(){
+    try{ localStorage.removeItem(LS_PREFIX + LOCK_KEY); }catch(e){}
+  }
+
+  function showVeilGateOrOpen(){
+    const code = getLockCode();
+    $('#veil-gate').style.display = code ? 'block' : 'none';
+    $('#veil-open').style.display = code ? 'none' : 'block';
+  }
+
+  // ---------- VEIL: secuencia de entrada ----------
+  initVeilStars();
+  setTimeout(() => {
+    $('#veil-loader').style.display = 'none';
+    $('#veil-content').classList.add('active');
+    showVeilGateOrOpen();
+  }, 1100);
+
+  $('#enter-btn').addEventListener('click', () => {
+    $('#veil').classList.add('hidden');
+  });
+
+  $('#lock-enter-btn').addEventListener('click', () => {
+    const val = $('#lock-input').value;
+    if(val && val === getLockCode()){
+      $('#veil').classList.add('hidden');
+    } else {
+      $('#lock-error').textContent = 'Ese no es el código.';
+      $('#lock-input').style.borderColor = '#a35a3f';
+      setTimeout(() => { $('#lock-input').style.borderColor = ''; }, 900);
+    }
+  });
+  $('#lock-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') $('#lock-enter-btn').click(); });
+
+  $('#lock-setup-link').addEventListener('click', () => {
+    const form = $('#lock-setup-form');
+    form.style.display = (form.style.display === 'none' || !form.style.display) ? 'block' : 'none';
+  });
+  $('#lock-save-btn').addEventListener('click', () => {
+    const val = $('#lock-new-code').value.trim();
+    if(!val) return;
+    setLockCodeStorage(val);
+    $('#lock-setup-form').style.display = 'none';
+    $('#lock-setup-link').textContent = 'Código guardado ✓';
+    $('#lock-new-code').value = '';
+  });
+
+  // gestión del código desde Mi perfil
+  $('#remove-lock-link').addEventListener('click', () => {
+    clearLockCodeStorage();
+    renderLockManage();
+  });
+  $('#relock-link').addEventListener('click', () => {
+    showVeilGateOrOpen();
+    $('#lock-input').value = '';
+    $('#lock-error').textContent = '';
+    $('#veil').classList.remove('hidden');
+  });
+  function renderLockManage(){
+    $('#lock-manage').style.display = getLockCode() ? 'block' : 'none';
+  }
+
+  // ---------- MODE TOGGLE ----------
+  $('#mode-task-btn').addEventListener('click', () => setMode('task'));
+  $('#mode-obj-btn').addEventListener('click', () => setMode('objective'));
+  $('#mode-habit-btn').addEventListener('click', () => setMode('habit'));
+  function setMode(mode){
+    consultMode = mode;
+    $('#mode-task-btn').classList.toggle('active', mode === 'task');
+    $('#mode-obj-btn').classList.toggle('active', mode === 'objective');
+    $('#mode-habit-btn').classList.toggle('active', mode === 'habit');
+    $('#task-mode-wrap').style.display = mode === 'task' ? 'block' : 'none';
+    $('#objective-mode-wrap').style.display = mode === 'objective' ? 'block' : 'none';
+    $('#habit-mode-wrap').style.display = mode === 'habit' ? 'block' : 'none';
+    if(mode === 'habit') renderHabitPickList();
+  }
+
+  $('#add-habit-from-consult-btn').addEventListener('click', () => {
+    document.querySelector('[data-tab="inicio"]').click();
+    $('#habit-add-form').classList.add('open');
+    $('#new-habit-text').focus();
+  });
+
+  // ---------- ASK (TAREA) ----------
+  $('#ask-btn').addEventListener('click', () => startReading());
+  $('#task-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') startReading(); });
+
+  function startReading(overrideTask, linkedHabitId){
+    const raw = (typeof overrideTask === 'string' && overrideTask.trim()) ? overrideTask.trim() : $('#task-input').value.trim();
+    if(!raw){
+      $('#task-input').focus();
+      $('#task-input').style.borderColor = '#a35a3f';
+      setTimeout(() => { $('#task-input').style.borderColor = ''; }, 900);
+      return;
+    }
+    $('#ask-btn').disabled = true;
+    $('#loading').classList.add('active');
+
+    findTodayEntry(raw, linkedHabitId).then(existing => {
+      setTimeout(() => {
+        let entry, quoteHtml, timeStr;
+
+        if(existing){
+          // Ya hay una predicción de hoy para esto mismo: se reutiliza,
+          // no se vuelve a tirar el dado.
+          entry = existing;
+          timeStr = formatMinutes(entry.predictedMinutes);
+          quoteHtml = entry.quoteHtml || (entry.statedMinutes
+            ? challengeQuote(escapeHtml(entry.task), formatMinutes(entry.statedMinutes), timeStr)
+            : visionQuote(escapeHtml(entry.task), timeStr));
+        } else {
+          const stated = parseStatedTime(raw);
+          let predictedMinutes, displayTask;
+
+          if(stated){
+            predictedMinutes = computeChallengeMinutes(stated.minutes);
+            timeStr = formatMinutes(predictedMinutes);
+            displayTask = stated.cleanTask;
+            quoteHtml = challengeQuote(escapeHtml(displayTask), formatMinutes(stated.minutes), timeStr);
+          } else {
+            predictedMinutes = pickMinutes(raw);
+            timeStr = formatMinutes(predictedMinutes);
+            displayTask = raw;
+            quoteHtml = visionQuote(escapeHtml(raw), timeStr);
+          }
+
+          entry = {
+            id: String(Date.now()),
+            type: 'task',
+            task: displayTask,
+            rawInput: raw,
+            quoteHtml: quoteHtml,
+            statedMinutes: stated ? stated.minutes : null,
+            linkedHabitId: linkedHabitId || null,
+            createdAt: Date.now(),
+            predictedMinutes: predictedMinutes,
+            completed: false,
+            completedAt: null,
+            actualMinutes: null
+          };
+          saveEntry(entry);
+        }
+
+        current = entry;
+        updateSidebarCount();
+
+        $('#loading').classList.remove('active');
+        $('#ask-btn').disabled = false;
+        $('#task-input').value = '';
+
+        showReading(entry, quoteHtml, timeStr);
+      }, 1550);
+    });
+  }
+
+  function showReading(entry, quoteHtml, timeStr){
+    $('#form-view').style.display = 'none';
+    $('#result').classList.add('active');
+
+    $('#result-task-name').textContent = entry.task;
+    $('#vision-quote').innerHTML = quoteHtml;
+    $('#predicted-time-big').textContent = timeStr;
+    $('#verdict-box').classList.remove('active');
+    $('#complete-btn').style.display = 'inline-block';
+    $('#complete-btn').textContent = 'Marcar como terminado';
+    $('#complete-btn').disabled = false;
+
+    // dial hand sweeps one full turn exactly over the predicted duration
+    const hand = $('#dial-hand');
+    hand.style.transition = 'none';
+    hand.style.transform = 'rotate(0deg)';
+    void hand.offsetWidth; // reflow
+    hand.style.transition = `transform ${entry.predictedMinutes * 60}s linear`;
+    hand.style.transform = 'rotate(360deg)';
+
+    tickCountdown(entry);
+    countdownTimer = setInterval(() => tickCountdown(entry), 1000);
+  }
+
+  function tickCountdown(entry){
+    const elapsedMs = Date.now() - entry.createdAt;
+    const totalMs = entry.predictedMinutes * 60000;
+    const remainMs = totalMs - elapsedMs;
+    const el = $('#countdown-big');
+    if(remainMs <= 0){
+      el.textContent = 'el instante ha llegado';
+      el.style.color = 'var(--gold-soft)';
+      clearInterval(countdownTimer);
+      return;
+    }
+    const totalSec = Math.floor(remainMs / 1000);
+    const mm = Math.floor(totalSec / 60);
+    const ss = totalSec % 60;
+    el.textContent = (mm < 10 ? '0'+mm : mm) + ':' + (ss < 10 ? '0'+ss : ss);
+  }
+
+  $('#complete-btn').addEventListener('click', async () => {
+    if(!current || current.completed) return;
+    clearInterval(countdownTimer);
+
+    const actualMinutes = Math.max(1, Math.round((Date.now() - current.createdAt) / 60000));
+    current.completed = true;
+    current.completedAt = Date.now();
+    current.actualMinutes = actualMinutes;
+    await saveEntry(current);
+
+    const ratio = actualMinutes / current.predictedMinutes;
+    let verdict, ontime;
+    if(actualMinutes < current.predictedMinutes * 0.6){
+      verdict = 'Has ido más rápido que mi propia visión. Incluso el tiempo se sorprende contigo.';
+      ontime = true;
+    } else if(ratio <= 1.05){
+      verdict = 'El viajero no se equivocó. Lo que vi, se cumplió.';
+      ontime = true;
+    } else if(ratio <= 1.4){
+      verdict = 'Casi. El destino se movió un poco, pero llegaste.';
+      ontime = true;
+    } else {
+      let tail = 'La próxima vez, empieza sin dudar y acertaré.';
+      if(profile.distractions && profile.distractions.trim()){
+        tail = `¿Otra vez ${profile.distractions.trim().split(/[,.;]/)[0].toLowerCase()}? Ya sabes por dónde se te escapa el tiempo.`;
+      }
+      verdict = `Has torcido el tiempo que vi. ${tail}`;
+      ontime = false;
+    }
+
+    $('#verdict-text').textContent = verdict;
+    $('#verdict-stat').textContent = `Predije ${formatMinutes(current.predictedMinutes)} · tardaste ${formatMinutes(actualMinutes)}`;
+    $('#verdict-box').classList.add('active');
+    $('#complete-btn').textContent = 'Terminado';
+    $('#complete-btn').disabled = true;
+
+    // si esta tarea coincide con un hábito de hoy (o venía de uno), lo marcamos hecho también
+    try{
+      const todayHabits = await getTodayHabitList();
+      let matched = null;
+      if(current.linkedHabitId){
+        matched = todayHabits.find(h => h.id === current.linkedHabitId);
+      }
+      if(!matched){
+        const normTask = normalizeFlat(current.task);
+        matched = todayHabits.find(h => normalizeFlat(h.text) === normTask) ||
+                  todayHabits.find(h => keywordOverlap(h.text, current.task) >= 2);
+      }
+      if(matched){
+        const log = await loadTodayLog();
+        if(!log.done.includes(matched.id) && !log.failed.includes(matched.id)){
+          log.done.push(matched.id);
+          await saveTodayLog(log);
+        }
+      }
+    }catch(e){ /* no crítico si falla */ }
+
+    updateSidebarCount();
+  });
+
+  $('#new-consult-btn').addEventListener('click', () => {
+    clearInterval(countdownTimer);
+    current = null;
+    $('#result').classList.remove('active');
+    $('#form-view').style.display = 'block';
+    $('#task-input').focus();
+  });
+
+  // ---------- ASK (OBJETIVO) ----------
+  $all('#day-chips .day-chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+
+  $('#ask-obj-btn').addEventListener('click', startObjective);
+  $('#objective-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') startObjective(); });
+
+  function getSelectedDays(){
+    return Array.from($all('#day-chips .day-chip.active')).map(el => Number(el.dataset.day));
+  }
+
+  function startObjective(){
+    const raw = $('#objective-input').value.trim();
+    if(!raw){
+      $('#objective-input').focus();
+      $('#objective-input').style.borderColor = '#a35a3f';
+      setTimeout(() => { $('#objective-input').style.borderColor = ''; }, 900);
+      return;
+    }
+    const days = getSelectedDays();
+    if(days.length === 0){
+      $('#obj-days-hint').textContent = 'Elige al menos un día de la semana.';
+      $('#obj-days-hint').style.color = 'var(--danger)';
+      return;
+    }
+    $('#obj-days-hint').textContent = '';
+
+    $('#ask-obj-btn').disabled = true;
+    $('#loading-obj').classList.add('active');
+
+    setTimeout(() => {
+      const sessionLength = (profile.sessionLength && profile.sessionLength > 0) ? profile.sessionLength : 60;
+      const totalMinutes = estimateObjectiveMinutes(raw);
+      const rawSessions = buildSessionPlan(totalMinutes, sessionLength, days, new Date());
+      const safeTask = escapeHtml(raw);
+      const plan = rawSessions.map((s, i) => ({
+        date: s.date.toISOString(),
+        minutes: s.minutes,
+        label: sessionLabel(safeTask, i, rawSessions.length),
+        plainLabel: sessionLabelPlain(raw, i, rawSessions.length)
+      }));
+      const targetDate = rawSessions.length ? rawSessions[rawSessions.length - 1].date : new Date();
+
+      const entry = {
+        id: String(Date.now()),
+        type: 'objective',
+        task: raw,
+        createdAt: Date.now(),
+        totalMinutes: totalMinutes,
+        sessionLength: sessionLength,
+        activeDays: days,
+        plan: plan,
+        targetDate: new Date(targetDate).toISOString()
+      };
+      currentObjective = entry;
+      saveObjective(entry);
+      updateSidebarCount();
+
+      $('#loading-obj').classList.remove('active');
+      $('#ask-obj-btn').disabled = false;
+      $('#objective-input').value = '';
+
+      showObjectiveResult(entry);
+    }, 1700);
+  }
+
+  function objectiveQuote(taskHtml, dateStr, sessions){
+    const templates = [
+      `He caminado hasta &laquo;${taskHtml}&raquo; ya terminado. Llego a ese día el <b>${dateStr}</b>, tras ${sessions} sesiones tuyas.`,
+      `Vi el punto final de &laquo;${taskHtml}&raquo;. Se llama <b>${dateStr}</b>, y hay ${sessions} pasos entre tú y ese día.`,
+      `No es una fecha cualquiera: es la que vi con mis propios ojos. <b>${dateStr}</b>, si sostienes ${sessions} sesiones como las que te marco.`
+    ];
+    return templates[Math.floor(Math.random() * templates.length)];
+  }
+
+  function showObjectiveResult(entry){
+    $('#obj-form-view').style.display = 'none';
+    $('#result-obj').classList.add('active');
+
+    const targetDate = new Date(entry.targetDate);
+    const dateStr = formatDateLong(targetDate);
+
+    $('#result-obj-name').textContent = entry.task;
+    $('#vision-obj-quote').innerHTML = objectiveQuote(escapeHtml(entry.task), dateStr, entry.plan.length);
+    $('#obj-target-date-big').textContent = formatDateShort(targetDate);
+    $('#obj-sessions-count').textContent = String(entry.plan.length);
+    $('#obj-plan-summary').textContent = `En total, unas ${formatMinutes(entry.totalMinutes)} de trabajo repartidas en bloques de ${formatMinutes(entry.sessionLength)}.`;
+
+    $('#obj-plan-list').innerHTML = entry.plan.map(s => {
+      const d = new Date(s.date);
+      return `<div class="session-card">
+        <div class="session-date">${formatDateShort(d)}</div>
+        <div>
+          <div class="session-label">${s.label}</div>
+          <div class="session-mins">${formatMinutes(s.minutes)}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    updateSidebarCount();
+  }
+
+  $('#new-obj-consult-btn').addEventListener('click', () => {
+    currentObjective = null;
+    $('#result-obj').classList.remove('active');
+    $('#obj-form-view').style.display = 'block';
+    $('#objective-input').focus();
+  });
+
+  // ---------- FECHAS / IDENTIDAD ----------
+  function escapeAttr(s){
+    return escapeHtml(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function dateKey(d){
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function dayOfYear(d){
+    const start = new Date(d.getFullYear(), 0, 0);
+    return Math.floor((d - start) / 86400000);
+  }
+
+  const DAILY_PHRASES = [
+    'El futuro que viste ya sabe si hoy hiciste lo que tocaba.',
+    'No prometas mañana lo que puedes empezar ahora mismo.',
+    'Cada hábito cumplido es un tramo de camino que ya no tienes que recorrer dos veces.',
+    'El tiempo no perdona la espera, pero premia el primer paso.',
+    'Hoy es el único día donde el futuro todavía se puede escribir.',
+    'Lo que repites cada día es lo que decide quién eres dentro de un año.',
+    'No hay visión que valga si hoy no mueves nada.',
+    'El viajero que fuiste mañana está mirando lo que haces ahora mismo.',
+    'Un objetivo sin hábito diario es solo un deseo con buena intención.',
+    'La constancia no se nota en un día. Se nota en todos los que nadie ve.'
+  ];
+  function phraseForToday(){
+    return DAILY_PHRASES[dayOfYear(new Date()) % DAILY_PHRASES.length];
+  }
+
+  function renderIdentity(){
+    $('#profile-date').textContent = formatDateLong(new Date());
+    $('#profile-phrase').textContent = phraseForToday();
+    renderLockManage();
+  }
+
+  // ---------- PERFIL TAB (identidad + objetivos) ----------
+  function makeSimpleRow(value, placeholder, textClass){
+    const wrap = document.createElement('div');
+    wrap.className = 'simple-row';
+    wrap.innerHTML = `
+      <input type="text" class="${textClass}" placeholder="${placeholder}" maxlength="140" value="${value ? escapeAttr(value) : ''}">
+      <div class="example-remove" title="Quitar">&times;</div>
+    `;
+    wrap.querySelector('.example-remove').addEventListener('click', () => wrap.remove());
+    return wrap;
+  }
+
+  $('#add-goal-btn').addEventListener('click', () => {
+    $('#goal-rows').appendChild(makeSimpleRow('', 'p. ej. hacer crecer Growth Club', 'goal-text'));
+  });
+
+  function renderProfileForm(){
+    const goalsWrap = $('#goal-rows');
+    goalsWrap.innerHTML = '';
+    const goals = (profile.mainGoals && profile.mainGoals.length) ? profile.mainGoals : [''];
+    goals.forEach(g => goalsWrap.appendChild(makeSimpleRow(g, 'p. ej. hacer crecer Growth Club', 'goal-text')));
+    renderIdentity();
+  }
+
+  function collectProfileFromForm(){
+    const goals = Array.from($all('#goal-rows .goal-text')).map(i => i.value.trim()).filter(Boolean);
+    // el resto del perfil (hábitos, calibración) se conserva tal cual está cargado en memoria;
+    // esta pestaña ya no edita esos campos.
+    return Object.assign({}, profile, { mainGoals: goals });
+  }
+
+  async function persistProfileAndFlash(){
+    profile = collectProfileFromForm();
+    await saveProfile(profile);
+    const flash = $('#save-flash');
+    flash.classList.add('show');
+    setTimeout(() => flash.classList.remove('show'), 1800);
+  }
+
+  $('#save-profile-btn').addEventListener('click', persistProfileAndFlash);
+
+  // ---------- HÁBITOS: vínculo con objetivos a días ----------
+  // Un objetivo a días añade, solo los días en que tiene sesión programada,
+  // un hábito "temporal" a la lista de hoy. Cuando esa fecha ya pasó, deja
+  // de aparecer por sí solo — no hace falta borrarlo a mano.
+  function objectiveHabitsForToday(objectives){
+    const tKey = todayKey();
+    const out = [];
+    objectives.forEach(o => {
+      (o.plan || []).forEach(s => {
+        const sKey = dateKey(new Date(s.date));
+        if(sKey === tKey){
+          const text = s.plainLabel || stripHtmlTags(s.label || o.task);
+          out.push({ id: 'obj:' + o.id + ':' + tKey, text, time: null, source: 'objective' });
+        }
+      });
+    });
+    return out;
+  }
+
+  async function getTodayHabitList(){
+    const objectives = await loadAllObjectives();
+    const perm = (profile.habits || []).map(h => Object.assign({ source: 'permanent' }, h));
+    const list = perm.concat(objectiveHabitsForToday(objectives));
+    scheduleHabitReminders(list);
+    return list;
+  }
+
+  // ---------- RECORDATORIOS Y NOTIFICACIONES ----------
+  function isNativeApp(){
+    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  }
+
+  async function requestNotificationPermission(){
+    try{
+      if(isNativeApp()){
+        const { LocalNotifications } = window.Capacitor.Plugins;
+        const perm = await LocalNotifications.checkPermissions();
+        if(perm.display !== 'granted') await LocalNotifications.requestPermissions();
+      } else if('Notification' in window && Notification.permission === 'default'){
+        await Notification.requestPermission();
+      }
+    } catch(err){ /* permiso denegado o no soportado: seguimos sin notificaciones */ }
+  }
+
+  function hashId(str){
+    let h = 0;
+    for(let i = 0; i < str.length; i++){ h = (h * 31 + str.charCodeAt(i)) >>> 0; }
+    return (h % 2000000000) + 1;
+  }
+
+  // En la app nativa (apk) programamos alarmas reales del sistema operativo,
+  // que suenan aunque la app esté cerrada. En el navegador no existe eso:
+  // como mucho, un aviso mientras la pestaña está abierta.
+  async function scheduleHabitReminders(habits){
+    const withTime = (habits || []).filter(h => h.time);
+    if(isNativeApp()){
+      try{
+        const { LocalNotifications } = window.Capacitor.Plugins;
+        const pending = await LocalNotifications.getPending();
+        if(pending.notifications.length){
+          await LocalNotifications.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
+        }
+        if(!withTime.length) return;
+        const notifications = withTime.map(h => {
+          const [hh, mm] = h.time.split(':').map(Number);
+          return {
+            id: hashId(h.id),
+            title: 'El Viajero Del Tiempo',
+            body: (h.emoji ? h.emoji + ' ' : '') + h.text,
+            schedule: { on: { hour: hh, minute: mm }, allowWhileIdle: true },
+          };
+        });
+        await LocalNotifications.schedule({ notifications });
+      } catch(err){ /* si el permiso no está concedido, no se programa nada */ }
+    } else {
+      startWebReminderLoop(withTime);
+    }
+  }
+
+  let webReminderTimer = null;
+  let webReminderFiredToday = new Set();
+  function startWebReminderLoop(withTime){
+    if(webReminderTimer) clearInterval(webReminderTimer);
+    if(!withTime.length || !('Notification' in window)) return;
+    webReminderTimer = setInterval(() => {
+      if(Notification.permission !== 'granted') return;
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mm = String(now.getMinutes()).padStart(2,'0');
+      const nowStr = `${hh}:${mm}`;
+      const todayKey = now.toDateString();
+      withTime.forEach(h => {
+        const fireKey = h.id + '-' + todayKey;
+        if(h.time === nowStr && !webReminderFiredToday.has(fireKey)){
+          webReminderFiredToday.add(fireKey);
+          new Notification('El Viajero Del Tiempo', { body: (h.emoji ? h.emoji + ' ' : '') + h.text });
+        }
+      });
+    }, 20000);
+  }
+
+  function newHabitId(){
+    return 'h' + Date.now() + Math.floor(Math.random() * 1000);
+  }
+
+  async function addHabitFromForm(){
+    const text = $('#new-habit-text').value.trim();
+    if(!text){
+      $('#new-habit-text').focus();
+      $('#new-habit-text').style.borderColor = '#a35a3f';
+      setTimeout(() => { $('#new-habit-text').style.borderColor = ''; }, 900);
+      return;
+    }
+    const time = $('#new-habit-time').value || null;
+    const emoji = $('#new-habit-emoji').value.trim() || null;
+    profile.habits = profile.habits || [];
+    profile.habits.push({ id: newHabitId(), text, time, emoji });
+    await saveProfile(profile);
+    $('#new-habit-text').value = '';
+    $('#new-habit-time').value = '';
+    $('#new-habit-emoji').value = '';
+    $('#habit-add-form').classList.remove('open');
+    renderInicio();
+    if($('#habit-mode-wrap').style.display !== 'none') renderHabitPickList();
+  }
+  $('#save-new-habit-btn').addEventListener('click', addHabitFromForm);
+  $('#cancel-new-habit-btn').addEventListener('click', () => {
+    $('#habit-add-form').classList.remove('open');
+  });
+
+  // ---------- INICIO: hábitos de hoy ----------
+  async function cycleHabit(habitId){
+    const log = await loadTodayLog();
+    const isDone = log.done.includes(habitId);
+    const isFailed = log.failed.includes(habitId);
+    log.done = log.done.filter(x => x !== habitId);
+    log.failed = log.failed.filter(x => x !== habitId);
+    if(!isDone && !isFailed) log.done.push(habitId);
+    else if(isDone) log.failed.push(habitId);
+    await saveTodayLog(log);
+    renderInicio();
+  }
+
+  function renderWeekStrip(){
+    const wrap = $('#week-strip');
+    const today = new Date();
+    const dow = today.getDay();
+    const mondayOffset = (dow === 0) ? -6 : (1 - dow);
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayOffset);
+    const names = ['L','M','X','J','V','S','D'];
+    let html = '';
+    for(let i = 0; i < 7; i++){
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const isToday = d.toDateString() === today.toDateString();
+      html += `<div class="day-cell${isToday ? ' today' : ''}"><span class="dow">${names[i]}</span><span class="dom">${d.getDate()}</span></div>`;
+    }
+    wrap.innerHTML = html;
+  }
+
+  function renderTimeline(habits, log){
+    const wrap = $('#timeline');
+    wrap.innerHTML = '';
+    const now = new Date();
+    const nowPct = ((now.getHours() * 60 + now.getMinutes()) / 1440) * 100;
+    const marker = document.createElement('div');
+    marker.className = 'timeline-marker';
+    marker.style.left = nowPct + '%';
+    marker.title = 'ahora';
+    wrap.appendChild(marker);
+    habits.filter(h => h.time).forEach(h => {
+      const parts = h.time.split(':').map(Number);
+      const pct = ((parts[0] * 60 + (parts[1] || 0)) / 1440) * 100;
+      const tick = document.createElement('div');
+      tick.className = 'timeline-tick' + (log.done.includes(h.id) ? ' done' : '');
+      tick.style.left = pct + '%';
+      tick.title = h.text + ' · ' + h.time;
+      wrap.appendChild(tick);
+    });
+  }
+
+  function renderHabitGrid(habits, log){
+    const grid = $('#habit-grid');
+    const reflectionsWrap = $('#inicio-reflections');
+
+    const tilesHtml = habits.map(h => {
+      const state = log.done.includes(h.id) ? 'done' : (log.failed.includes(h.id) ? 'failed' : '');
+      const checkMark = state === 'done' ? '&#10003;' : (state === 'failed' ? '&#10005;' : '');
+      const srcLabel = h.source === 'objective' ? `<div class="habit-tile-src">Objetivo</div>` : '';
+      const timeLabel = h.time ? `<div class="habit-tile-time">${h.time}</div>` : '';
+      const emojiLabel = h.emoji ? `<span class="habit-tile-emoji">${escapeHtml(h.emoji)}</span> ` : '';
+      return `<div class="habit-tile ${state}" data-habit-id="${escapeAttr(h.id)}">
+        <div>
+          <div class="habit-check">${checkMark}</div>
+          <div class="habit-tile-text">${emojiLabel}${escapeHtml(h.text)}</div>
+        </div>
+        <div>${timeLabel}${srcLabel}</div>
+      </div>`;
+    }).join('');
+
+    grid.innerHTML = tilesHtml + `<div class="habit-tile add-tile" id="habit-add-tile">+</div>`;
+
+    if(habits.length === 0){
+      reflectionsWrap.innerHTML = '';
+    } else {
+      const reflections = habits.filter(h => log.failed.includes(h.id));
+      reflectionsWrap.innerHTML = reflections.map(h => `<div class="habit-reflection">${reflectionFor(escapeHtml(h.text))}</div>`).join('');
+    }
+
+    $all('#habit-grid .habit-tile:not(.add-tile)').forEach(tile => {
+      tile.addEventListener('click', () => cycleHabit(tile.dataset.habitId));
+    });
+    const addTile = document.getElementById('habit-add-tile');
+    if(addTile){
+      addTile.addEventListener('click', () => {
+        $('#habit-add-form').classList.add('open');
+        $('#new-habit-text').focus();
+      });
+    }
+  }
+
+  async function renderInicio(){
+    $('#inicio-date').textContent = formatDateLong(new Date());
+    renderWeekStrip();
+    const habits = await getTodayHabitList();
+    const log = await loadTodayLog();
+    renderTimeline(habits, log);
+    renderHabitGrid(habits, log);
+  }
+
+  // ---------- HÁBITO MODE (dentro de la consulta) ----------
+  function startHabitReading(habitText, habitId){
+    setMode('task');
+    startReading(habitText, habitId);
+  }
+
+  async function renderHabitPickList(){
+    const habits = await getTodayHabitList();
+    const log = await loadTodayLog();
+    const pending = habits.filter(h => !log.done.includes(h.id) && !log.failed.includes(h.id));
+    const list = $('#habit-pick-list');
+    const empty = $('#habit-pick-empty');
+    if(pending.length === 0){
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    list.innerHTML = pending.map(h => `<div class="habit-pick-row" data-habit-id="${escapeAttr(h.id)}" data-habit-text="${escapeAttr(h.text)}">
+      <div class="habit-pick-name">${h.emoji ? escapeHtml(h.emoji) + ' ' : ''}${escapeHtml(h.text)}</div>
+      <div class="habit-pick-time">${h.time ? h.time : (h.source === 'objective' ? 'objetivo' : '')}</div>
+    </div>`).join('');
+    $all('#habit-pick-list .habit-pick-row').forEach(row => {
+      row.addEventListener('click', () => {
+        startHabitReading(row.dataset.habitText, row.dataset.habitId);
+      });
+    });
+  }
+
+  // ---------- PAST TAB ----------
+  async function renderPast(){
+    const empty = $('#past-empty');
+    const content = $('#past-content');
+    const resetWrap = $('#reset-wrap');
+    const list = $('#past-list');
+    const listObj = $('#past-list-obj');
+    const objTitle = $('#past-obj-title');
+
+    list.innerHTML = '<div class="empty-state"><p style="font-style:normal;">Consultando el libro&hellip;</p></div>';
+    listObj.innerHTML = '';
+
+    const [entries, objectives] = await Promise.all([loadAllEntries(), loadAllObjectives()]);
+
+    if(entries.length === 0 && objectives.length === 0){
+      content.style.display = 'none';
+      empty.style.display = 'block';
+      resetWrap.innerHTML = '';
+      updateSidebarCount(0);
+      return;
+    }
+    empty.style.display = 'none';
+    content.style.display = 'block';
+    updateSidebarCount(entries.length + objectives.length);
+
+    if(entries.length === 0){
+      list.innerHTML = '<div class="empty-state" style="padding:24px 0;"><p style="font-style:normal;">Ninguna tarea todavía.</p></div>';
+    } else {
+      list.innerHTML = entries.map(e => {
+        const date = new Date(e.createdAt);
+        const dateStr = date.toLocaleDateString('es-ES', { day:'numeric', month:'short', year:'numeric' }) +
+                        ' · ' + date.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+        let badge, meta;
+        if(!e.completed){
+          badge = '<span class="badge pending">Pendiente</span>';
+          meta = e.statedMinutes
+            ? `Dijiste ${formatMinutes(e.statedMinutes)} · reto: ${formatMinutes(e.predictedMinutes)} · ${dateStr}`
+            : `Predicción: ${formatMinutes(e.predictedMinutes)} · ${dateStr}`;
+        } else if(e.actualMinutes == null){
+          // marcado como hecho a mano desde el historial, sin tiempo real registrado
+          badge = '<span class="badge ontime">Cumplida</span>';
+          meta = e.statedMinutes
+            ? `Reto: ${formatMinutes(e.predictedMinutes)} (dijiste ${formatMinutes(e.statedMinutes)}) · marcada como hecha · ${dateStr}`
+            : `Predije ${formatMinutes(e.predictedMinutes)} · marcada como hecha · ${dateStr}`;
+        } else {
+          const ratio = e.actualMinutes / e.predictedMinutes;
+          const ontime = ratio <= 1.4;
+          badge = ontime ? '<span class="badge ontime">Cumplida</span>' : '<span class="badge late">Se torció</span>';
+          meta = e.statedMinutes
+            ? `Reto: ${formatMinutes(e.predictedMinutes)} (dijiste ${formatMinutes(e.statedMinutes)}) · tardaste ${formatMinutes(e.actualMinutes)} · ${dateStr}`
+            : `Predije ${formatMinutes(e.predictedMinutes)} · tardaste ${formatMinutes(e.actualMinutes)} · ${dateStr}`;
+        }
+        const toggleTitle = e.completed ? 'Marcar como pendiente' : 'Marcar como hecha';
+        const toggleClass = e.completed ? 'toggle-pending' : 'toggle-done';
+        const toggleIcon = e.completed ? '&#8635;' : '&#10003;';
+        return `<div class="past-card">
+          <div>
+            <div class="ptask">${escapeHtml(e.task)}</div>
+            <div class="pmeta">${meta}</div>
+          </div>
+          <div class="past-card-actions">
+            ${badge}
+            <div class="past-card-btns">
+              <button class="past-icon-btn ${toggleClass}" data-toggle-id="${escapeAttr(e.id)}" title="${toggleTitle}">${toggleIcon}</button>
+              <button class="past-icon-btn delete-btn" data-delete-id="${escapeAttr(e.id)}" title="Eliminar">&#10005;</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+      $all('#past-list [data-toggle-id]').forEach(btn => {
+        btn.addEventListener('click', async (ev) => {
+          ev.stopPropagation();
+          const id = btn.dataset.toggleId;
+          const entry = entries.find(x => x.id === id);
+          await setEntryCompleted(id, entry ? !entry.completed : true);
+          renderPast();
+        });
+      });
+      $all('#past-list [data-delete-id]').forEach(btn => {
+        btn.addEventListener('click', async (ev) => {
+          ev.stopPropagation();
+          if(btn.dataset.confirming === '1'){
+            await deleteEntryById(btn.dataset.deleteId);
+            renderPast();
+            return;
+          }
+          // primer toque: pide confirmación dentro del propio botón,
+          // sin depender del confirm() nativo del navegador/WebView
+          // (en la app empaquetada puede no mostrarse o cancelarse solo).
+          btn.dataset.confirming = '1';
+          btn.textContent = '✓?';
+          btn.title = 'Toca otra vez para confirmar';
+          btn.classList.add('confirming');
+          clearTimeout(btn._confirmTimer);
+          btn._confirmTimer = setTimeout(() => {
+            btn.dataset.confirming = '0';
+            btn.innerHTML = '&#10005;';
+            btn.title = 'Eliminar';
+            btn.classList.remove('confirming');
+          }, 2500);
+        });
+      });
+    }
+
+    if(objectives.length === 0){
+      objTitle.style.display = 'none';
+    } else {
+      objTitle.style.display = 'block';
+      listObj.innerHTML = objectives.map(o => {
+        const created = new Date(o.createdAt);
+        const target = new Date(o.targetDate);
+        const createdStr = created.toLocaleDateString('es-ES', { day:'numeric', month:'short', year:'numeric' });
+        const targetStr = formatDateShort(target);
+        const planHtml = (o.plan || []).map(s => {
+          const d = new Date(s.date);
+          return `<div class="session-card">
+            <div class="session-date">${formatDateShort(d)}</div>
+            <div>
+              <div class="session-label">${s.label}</div>
+              <div class="session-mins">${formatMinutes(s.minutes)}</div>
+            </div>
+          </div>`;
+        }).join('');
+        return `<div class="past-card clickable" data-obj-id="${o.id}" style="flex-direction:column; align-items:stretch;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; width:100%;">
+            <div>
+              <div class="ptask">${escapeHtml(o.task)}</div>
+              <div class="pmeta">Trazado el ${createdStr} · llegada: ${targetStr} · ${(o.plan||[]).length} sesiones</div>
+            </div>
+            <span class="badge pending">Ver camino</span>
+          </div>
+          <div class="obj-plan-inline" id="obj-inline-${o.id}" style="display:flex; flex-direction:column; gap:10px;">
+            ${planHtml}
+          </div>
+        </div>`;
+      }).join('');
+
+      $all('#past-list-obj .past-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const inline = card.querySelector('.obj-plan-inline');
+          inline.classList.toggle('open');
+        });
+      });
+    }
+
+    resetWrap.innerHTML = '<span class="reset-link" id="reset-link">Borrar todas las visiones</span>';
+    $('#reset-link').addEventListener('click', async () => {
+      const link = $('#reset-link');
+      if(link.dataset.confirming === '1'){
+        await deleteAllEntries();
+        renderPast();
+        return;
+      }
+      link.dataset.confirming = '1';
+      link.textContent = '¿Seguro? Toca otra vez para confirmar';
+      clearTimeout(link._confirmTimer);
+      link._confirmTimer = setTimeout(() => {
+        link.dataset.confirming = '0';
+        link.textContent = 'Borrar todas las visiones';
+      }, 3000);
+    });
+  }
+
+  async function updateSidebarCount(n){
+    if(typeof n === 'number'){
+      $('#sidebar-count').textContent = n + (n === 1 ? ' visión registrada' : ' visiones registradas');
+      return;
+    }
+    const [entries, objectives] = await Promise.all([loadAllEntries(), loadAllObjectives()]);
+    const total = entries.length + objectives.length;
+    $('#sidebar-count').textContent = total + (total === 1 ? ' visión registrada' : ' visiones registradas');
+  }
+
+  // ---------- INIT ----------
+  (async function init(){
+    profile = await loadProfile();
+    updateSidebarCount();
+    await requestNotificationPermission();
+    renderInicio();
+  })();
+})();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
